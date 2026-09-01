@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Executive Communication QA Framework & Cloud Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin: 0 auto; height: 280px; max-height: 350px; }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background: white !important; color: black !important; }
+            .shadow-lg, .shadow-md, .shadow-sm { box-shadow: none !important; }
+        }
+        .excel-cell-header { background-color: #107c41; color: white; }
+        .dropzone-active { border-color: #10b981 !important; background-color: #ecfdf5 !important; }
+        .roadmap-timeline-line::before { content: ''; position: absolute; left: 23px; top: 40px; bottom: 0; width: 2px; background-color: #e2e8f0; z-index: 0; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .cloud-spinner { border: 3px solid rgba(16, 185, 129, 0.2); border-top-color: #10b981; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+    <!-- AUTHENTICATION & CLOUD CONNECTION GATEWAY -->
+    <div id="auth-container" class="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center p-4">
+        
+        <!-- Loading State -->
+        <div id="auth-loading" class="text-center space-y-4">
+            <div class="inline-flex items-center justify-center p-4 bg-slate-800 rounded-full shadow-inner mb-2">
+                <div class="cloud-spinner"></div>
+            </div>
+            <h1 class="text-xl font-bold text-white tracking-tight">Connecting to Cloud Database...</h1>
+            <p class="text-slate-400 text-xs">Authenticating secure session and retrieving live team analytics.</p>
+        </div>
+
+        <!-- Login Form State -->
+        <div id="auth-form-wrapper" class="max-w-md w-full bg-white rounded-2xl shadow-2xl overflow-hidden hidden">
+            <div class="bg-emerald-900 p-6 text-center border-b border-emerald-800">
+                <div class="inline-block p-3 bg-emerald-800 rounded-full mb-3 shadow-inner">
+                    <span class="text-3xl">&#128274;</span>
+                </div>
+                <h1 class="text-xl font-bold text-white tracking-tight">Communication QA Cloud Portal</h1>
+                <p class="text-emerald-200 text-xs mt-1">Select your secure access level to continue</p>
+            </div>
+            
+            <div class="p-6">
+                <!-- Role Toggle -->
+                <div class="flex bg-slate-100 p-1 rounded-lg mb-6">
+                    <button onclick="toggleAuthTab('manager')" id="auth-tab-manager" class="flex-1 py-2 text-xs font-bold rounded-md bg-white shadow text-emerald-800 transition">Manager Portal</button>
+                    <button onclick="toggleAuthTab('employee')" id="auth-tab-employee" class="flex-1 py-2 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700 transition">Employee Portal</button>
+                </div>
+
+                <!-- Manager Login -->
+                <div id="auth-manager-form" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Manager Access PIN</label>
+                        <input type="password" id="managerPin" placeholder="Enter Manager PIN (Default: 1234)" class="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
+                        <p id="managerAuthError" class="text-[10px] text-rose-500 font-semibold mt-1 hidden">Incorrect PIN. Please try again.</p>
+                    </div>
+                    <button onclick="executeLogin('manager')" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow transition">
+                        Authenticate as Manager
+                    </button>
+                </div>
+
+                <!-- Employee Login (Email + Password) -->
+                <div id="auth-employee-form" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Work Email Address</label>
+                        <input type="email" id="employeeEmail" placeholder="e.g., aditya@company.com" class="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Account Password</label>
+                        <input type="password" id="employeePassword" placeholder="Enter password" class="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
+                        <p class="text-[10px] text-slate-400 mt-1.5">💡 <strong class="text-slate-600">Test Accounts:</strong> aditya@company.com, shaarav@company.com<br>🔑 <strong class="text-slate-600">Default Password:</strong> Demo123</p>
+                        <p id="empAuthError" class="text-[10px] text-rose-500 font-semibold mt-1 hidden">Invalid email or password.</p>
+                    </div>
+                    <button onclick="executeLogin('employee')" class="w-full mt-2 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow transition">
+                        Secure Login
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTAINER -->
+    <div id="app-container" class="hidden flex-col min-h-screen">
+        
+        <!-- HEADER BAR -->
+        <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-1">
+                            <span id="headerRoleBadge" class="bg-emerald-800/50 text-emerald-300 px-2 py-0.5 rounded border border-emerald-700/50">&#128100; Manager View</span>
+                            <span>&bull;</span>
+                            <span class="flex items-center gap-1">&#9729;&#65039; Cloud Synced</span>
+                        </div>
+                        <h1 class="text-xl sm:text-2xl font-bold tracking-tight text-white" id="headerTitle">Executive Team Dashboard</h1>
+                        <p class="text-xs sm:text-sm text-slate-400" id="headerSubtitle">Team Aggregates, Telemetry & Evaluation Hub</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2 sm:gap-3 no-print">
+                        <button onclick="changeManagerPinPrompt()" class="manager-only px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-sm transition flex items-center gap-2 border border-slate-600">
+                            <span>&#128274;</span> <span class="hidden sm:inline">Change PIN</span>
+                        </button>
+                        <button onclick="switchTab('audio')" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-sm transition flex items-center gap-2 border border-emerald-400">
+                            <span>&#127908;</span> <span class="hidden sm:inline">Upload Practice Audio</span><span class="sm:hidden">Audio</span>
+                        </button>
+                        <button onclick="exportToExcel('Communication_QA_Cloud_Dataset.csv')" class="manager-only px-3.5 py-2 bg-emerald-800 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-sm transition flex items-center gap-2 border border-emerald-600">
+                            <span>&#128190;</span> <span class="hidden sm:inline">Export Live Data</span><span class="sm:hidden">Export</span>
+                        </button>
+                        <button onclick="executeLogout()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs sm:text-sm font-medium rounded-lg border border-slate-700 transition flex items-center gap-2">
+                            <span>&#128275;</span> <span class="hidden sm:inline">Sign Out</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4 pt-4 border-t border-slate-800 text-xs">
+                    <div class="bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/50">
+                        <span class="text-slate-400 block truncate" id="statLabel1">Evaluated Sample</span>
+                        <span class="text-lg font-bold text-white truncate" id="statValue1">-- Executives</span>
+                    </div>
+                    <div class="bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/50">
+                        <span class="text-slate-400 block truncate" id="statLabel2">Baseline Average</span>
+                        <span class="text-lg font-bold text-amber-400 truncate" id="statValue2">-- <span class="text-xs text-slate-400">/ 40 pts</span></span>
+                    </div>
+                    <div class="bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/50">
+                        <span class="text-slate-400 block truncate" id="statLabel3">Tier Ratio</span>
+                        <span class="text-lg font-bold text-emerald-400 truncate" id="statValue3">--</span>
+                    </div>
+                    <div class="bg-slate-800/60 p-2.5 rounded-lg border border-slate-700/50 flex flex-col justify-center">
+                        <span class="text-slate-400 block truncate mb-0.5">Database Link</span>
+                        <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div><span class="text-sm font-bold text-slate-200">Live</span></div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <nav class="bg-white border-b border-slate-200 sticky top-[137px] sm:top-[121px] z-40 no-print shadow-sm">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex overflow-x-auto space-x-1 sm:space-x-8 py-2 text-xs sm:text-sm font-medium border-b-0 scrollbar-none">
+                    <button onclick="switchTab('overview')" id="tab-overview" class="nav-tab px-3 py-2 rounded-md transition whitespace-nowrap bg-emerald-50 text-emerald-700 font-semibold border-b-2 border-emerald-600">
+                        &#128202; <span id="navOverviewText">Executive Overview</span>
+                    </button>
+                    <button onclick="switchTab('audio')" id="tab-audio" class="nav-tab px-3 py-2 rounded-md transition whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                        &#127908; Audio Sandbox (Cloud)
+                    </button>
+                    <button onclick="switchTab('scorecards')" id="tab-scorecards" class="nav-tab px-3 py-2 rounded-md transition whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                        &#128100; <span id="navScorecardText">Team Scorecards</span>
+                    </button>
+                    <button onclick="switchTab('simulator')" id="tab-simulator" class="nav-tab px-3 py-2 rounded-md transition whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                        &#127919; <span id="navSimText">Reassessment Simulator</span>
+                    </button>
+                    <button onclick="switchTab('schedule')" id="tab-schedule" class="nav-tab px-3 py-2 rounded-md transition whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                        &#128197; <span id="navTrainingText">Training Roadmap</span>
+                    </button>
+                    <button onclick="switchTab('excel')" id="tab-excel" class="manager-only nav-tab px-3 py-2 rounded-md transition whitespace-nowrap text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                        &#128199; Excel Live Hub
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full">
+
+            <!-- TAB 1: OVERVIEW -->
+            <section id="content-overview" class="space-y-6">
+                <div class="bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-xl p-6 shadow-md border border-slate-700">
+                    <div class="max-w-3xl">
+                        <span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-semibold rounded-full inline-flex items-center gap-1.5 mb-3">
+                            <span>Cloud-Synced Database Active</span> <span class="bg-sky-500/30 text-sky-300 px-1.5 py-0.5 rounded text-[10px]">✨ Gemini AI Enabled</span>
+                        </span>
+                        <h2 class="text-xl sm:text-2xl font-bold mb-2" id="overviewBannerTitle">Operationalizing Spoken Communication Quality</h2>
+                        <p class="text-slate-300 text-xs sm:text-sm leading-relaxed mb-4" id="overviewBannerDesc">
+                            This dashboard presents the baseline evaluation and continuous self-learning trajectory for our cohort of customer support executives. Data is securely persisted across devices.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-bold text-slate-800 text-sm sm:text-base" id="chart1Title">Team Baseline Skill Balance</h3>
+                                <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">Out of 10</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-4" id="chart1Desc">Average scores across the 4 core communication metrics.</p>
+                            <div class="chart-container"><canvas id="overviewSkillRadarChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-bold text-slate-800 text-sm sm:text-base" id="chart2Title">Live Scores Overview</h3>
+                                <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">Out of 40</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-4" id="chart2Desc">Current evaluation rankings across the cohort.</p>
+                            <div class="chart-container"><canvas id="overviewBaselineBarChart"></canvas></div>
+                        </div>
+                    </div>
+
+                    <div id="chart3Container" class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between manager-only">
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-bold text-slate-800 text-sm sm:text-base">Tier Distribution</h3>
+                                <span class="text-xs bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-medium">Current</span>
+                            </div>
+                            <p class="text-xs text-slate-500 mb-4">Headcount breakdown by proficiency tier.</p>
+                            <div class="chart-container"><canvas id="overviewTierDonutChart"></canvas></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: AUDIO SANDBOX -->
+            <section id="content-audio" class="space-y-6 hidden">
+                <div class="bg-slate-900 text-white p-6 rounded-xl shadow-md border border-slate-800">
+                    <h2 class="text-xl sm:text-2xl font-bold mb-1">Audio Recording AI Evaluation Sandbox</h2>
+                    <p class="text-xs sm:text-sm text-slate-300">Upload your practice audio for Web Audio Telemetry analysis. Manager assignments sync directly to the cloud database.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-5 space-y-4">
+                        <div class="bg-slate-100 p-4 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center justify-between">
+                                <span>1. Assign Cloud Recording</span>
+                                <span class="text-[10px] bg-emerald-200 text-emerald-800 font-bold px-2 py-0.5 rounded">Auto-Syncs</span>
+                            </h4>
+                            <div class="flex gap-2">
+                                <select id="uploadExecutive" onchange="handleExecutiveChange()" class="w-1/2 px-2 py-2 text-xs font-medium border border-slate-300 rounded-lg outline-none cursor-pointer focus:ring-2 focus:ring-emerald-500">
+                                    <option value="none">-- Select Speaker --</option>
+                                </select>
+                                <select id="uploadWeek" class="w-1/2 px-2 py-2 text-xs font-medium border border-slate-300 rounded-lg outline-none cursor-pointer focus:ring-2 focus:ring-emerald-500">
+                                    <option value="total">Baseline (Wk 0)</option>
+                                    <option value="wk1">Week 1 Practice</option>
+                                    <option value="wk2">Mid-Sprint (Wk 2)</option>
+                                    <option value="wk3">Week 3 Practice</option>
+                                    <option value="wk4">Final Sprint (Wk 4)</option>
+                                    <option value="wk5">Final Assessment (Wk 5)</option>
+                                </select>
+                            </div>
+                            <input type="text" id="newExecutiveName" placeholder="Enter New Team Member Name" class="hidden w-full px-3 py-2 text-xs border border-slate-300 rounded-lg outline-none">
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl border-2 border-dashed border-slate-300 hover:border-emerald-500 transition text-center shadow-sm cursor-pointer" id="dropzone" onclick="document.getElementById('fileInput').click()">
+                            <div class="text-4xl mb-2 text-slate-400">&#127908;</div>
+                            <h3 class="font-bold text-slate-800 text-sm mb-1">2. Upload Audio</h3>
+                            <p class="text-[11px] text-slate-500">Drag & drop or click to browse</p>
+                            <input type="file" id="fileInput" accept="audio/*" class="hidden" onchange="handleFileSelect(event)">
+                        </div>
+
+                        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">Or Use a Test Sample</h4>
+                            <button onclick="loadSampleAudio('sample1')" class="w-full text-left p-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-bold">Sample 1: Polished Executive</button>
+                            <button onclick="loadSampleAudio('sample2')" class="w-full text-left p-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-bold">Sample 2: High Hesitation</button>
+                            <button onclick="loadSampleAudio('sample3')" class="w-full text-left p-2.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-xs font-bold">Sample 3: Rapid Pace</button>
+                        </div>
+
+                        <div id="audioPlayerCard" class="bg-slate-900 text-white p-4 rounded-xl shadow-sm hidden space-y-3">
+                            <div class="flex justify-between text-xs">
+                                <span class="font-semibold text-emerald-400 truncate w-3/4" id="audioLoadedTitle">Loaded...</span>
+                                <span class="text-slate-400" id="audioLoadedMeta">0m 0s</span>
+                            </div>
+                            <audio id="audioElement" controls class="w-full h-8 rounded accent-emerald-500"></audio>
+                            <button onclick="runAudioAnalysis()" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs rounded-lg shadow transition">
+                                Analyze & Sync to Cloud
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-7 space-y-6">
+                        <div id="audioAnalysisIdle" class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm text-center py-16">
+                            <div class="text-5xl text-slate-300 mb-3">&#128202;</div>
+                            <h3 class="font-bold text-slate-700">Awaiting Audio for AI Telemetry</h3>
+                        </div>
+
+                        <div id="audioAnalysisLoading" class="bg-white p-8 rounded-xl border border-slate-200 shadow-sm text-center py-12 hidden">
+                            <div class="inline-block animate-spin text-3xl text-emerald-600 mb-4">&#9881;</div>
+                            <h3 class="font-bold text-slate-800 mb-2">Running Speech Telemetry...</h3>
+                            <div class="w-full bg-slate-100 rounded-full h-2 max-w-xs mx-auto overflow-hidden">
+                                <div id="analysisProgressBar" class="bg-emerald-500 h-2 rounded-full transition-all duration-300" style="width: 15%;"></div>
+                            </div>
+                        </div>
+
+                        <div id="audioAnalysisResults" class="space-y-6 hidden">
+                            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+                                <div>
+                                    <span class="px-2 py-0.5 text-[10px] font-bold rounded uppercase" id="resultTierBadge">Tier</span>
+                                    <h3 class="text-lg font-bold text-slate-900 mt-1" id="resultAudioName">Result</h3>
+                                </div>
+                                <div class="bg-slate-900 text-white px-5 py-3 rounded-xl text-center">
+                                    <span class="text-[10px] text-slate-400 uppercase">Score</span>
+                                    <div class="text-2xl font-black text-emerald-400" id="resultTotalScore">0</div>
+                                </div>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-2 text-xs font-bold text-slate-700">
+                                    <h4 class="uppercase text-slate-800 border-b border-slate-100 pb-2 mb-3">Pillar Breakdown</h4>
+                                    <div class="flex justify-between p-2 bg-slate-50 rounded"><span>Structure:</span> <span id="scoreStruct"></span></div>
+                                    <div class="flex justify-between p-2 bg-slate-50 rounded"><span>Tone:</span> <span id="scoreTone"></span></div>
+                                    <div class="flex justify-between p-2 bg-slate-50 rounded"><span>Clarity:</span> <span id="scoreClarity"></span></div>
+                                    <div class="flex justify-between p-2 bg-slate-50 rounded"><span>Pacing:</span> <span id="scorePacing"></span></div>
+                                </div>
+                                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                                    <h4 class="font-bold text-slate-800 text-xs uppercase mb-2">Vs Team Average</h4>
+                                    <div class="chart-container"><canvas id="audioAnalysisRadarChart"></canvas></div>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
+                                <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-1.5"><span class="text-sky-500">✨</span> AI Diagnostic Feedback & Action Plan</h4>
+                                <div class="space-y-2 text-xs">
+                                    <div class="p-3 bg-amber-50 rounded-lg border border-amber-200 text-amber-900">
+                                        <strong class="block mb-0.5 font-bold">&#128226; Key Observation:</strong>
+                                        <span id="resultFeedbackObs">Awaiting AI analysis...</span>
+                                    </div>
+                                    <div class="p-3 bg-sky-50 rounded-lg border border-sky-200 text-sky-900">
+                                        <strong class="block mb-0.5 font-bold">&#127919; Prescribed Drill:</strong>
+                                        <span id="resultFeedbackDrill">Awaiting AI analysis...</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: SCORECARDS -->
+            <section id="content-scorecards" class="space-y-6 hidden">
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-wrap justify-between items-center gap-4 manager-only">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">Individual Executive Scorecards</h2>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="scorecardSearch" onkeyup="filterScorecards()" placeholder="Search..." class="px-3 py-1.5 text-xs border border-slate-300 rounded-lg outline-none">
+                    </div>
+                </div>
+                <div id="scorecardsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+
+            <!-- TAB 4: REASSESSMENT SIMULATOR -->
+            <section id="content-simulator" class="space-y-6 hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-7 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col justify-between">
+                        <div class="px-5 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+                            <div>
+                                <h3 class="font-bold text-slate-800 text-sm">Score Matrix (Wk 0 - Wk 5)</h3>
+                                <p class="text-[10px] text-slate-500">Live editing enabled. Changes sync to cloud.</p>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-100 text-slate-700 font-semibold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                                    <tr>
+                                        <th class="py-3 px-2">Name</th>
+                                        <th class="py-3 px-1 text-center">Base</th>
+                                        <th class="py-3 px-1 text-center">Wk 1</th>
+                                        <th class="py-3 px-1 text-center">Wk 2</th>
+                                        <th class="py-3 px-1 text-center">Wk 3</th>
+                                        <th class="py-3 px-1 text-center">Wk 4</th>
+                                        <th class="py-3 px-1 text-center">Wk 5</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="simulatorTableBody" class="divide-y divide-slate-200"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-5 space-y-6">
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <h3 class="font-bold text-slate-800 text-sm mb-2" id="simChartTitle">Continuous Growth Trajectory</h3>
+                            <div class="chart-container"><canvas id="simulatorProgressChart"></canvas></div>
+                        </div>
+                        
+                        <div class="bg-slate-900 text-white p-5 rounded-xl shadow-md border border-slate-800 manager-only">
+                            <div class="flex items-center justify-between mb-2">
+                                <h3 class="font-bold text-sm text-sky-400 uppercase tracking-wider flex items-center gap-1.5"><span>✨</span> AI Executive Briefing</h3>
+                            </div>
+                            <p class="text-xs text-slate-400 mb-3">Generate a professional COO-level summary of the current 5-week trajectory.</p>
+                            <textarea id="simExecutiveText" readonly class="w-full text-[11px] bg-slate-800 border border-slate-700 text-slate-200 p-3 rounded-lg h-24 focus:outline-none resize-none mb-3" placeholder="AI analysis will appear here..."></textarea>
+                            <div class="flex gap-2">
+                                <button onclick="generateAIExtendedSummary()" class="flex-1 py-2 bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5 shadow-[0_0_10px_rgba(14,165,233,0.2)]">
+                                    Generate Briefing
+                                </button>
+                                <button onclick="copyExecutiveText()" class="flex-1 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-lg transition border border-slate-600">
+                                    Copy Text
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 5: TRAINING ROADMAP -->
+            <section id="content-schedule" class="space-y-6 hidden">
+                <div class="flex justify-center mb-6 manager-only">
+                    <div class="bg-slate-200 p-1 rounded-lg inline-flex shadow-inner">
+                        <button onclick="setTrainingView('weekly')" id="btnViewWeekly" class="px-5 py-2 text-xs font-bold rounded-md bg-white shadow text-slate-800">View by Training Week</button>
+                        <button onclick="setTrainingView('individual')" id="btnViewIndividual" class="px-5 py-2 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700">View by Executive Roadmap</button>
+                    </div>
+                </div>
+
+                <div id="viewWeeklyContainer" class="space-y-6 manager-only">
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                        <div class="border-b border-slate-200 bg-slate-50 px-4 py-2 flex overflow-x-auto space-x-2">
+                            <button onclick="switchWeek('wk1')" id="weekTab-wk1" class="week-tab px-4 py-2 rounded-lg text-xs font-bold bg-emerald-600 text-white">Wk 1</button>
+                            <button onclick="switchWeek('wk2')" id="weekTab-wk2" class="week-tab px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">Wk 2</button>
+                            <button onclick="switchWeek('wk3')" id="weekTab-wk3" class="week-tab px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">Wk 3</button>
+                            <button onclick="switchWeek('wk4')" id="weekTab-wk4" class="week-tab px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">Wk 4</button>
+                            <button onclick="switchWeek('wk5')" id="weekTab-wk5" class="week-tab px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200">Wk 5</button>
+                        </div>
+                        <div id="weekContent" class="p-6 space-y-6"></div>
+                    </div>
+                </div>
+
+                <div id="viewIndividualContainer" class="hidden space-y-6">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4 manager-only">
+                            <label class="font-bold text-slate-700 text-xs uppercase tracking-wider">Select Executive Roadmap:</label>
+                            <select id="roadmapSelect" onchange="renderIndividualRoadmap()" class="px-4 py-2 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-900 text-sm font-bold outline-none cursor-pointer"></select>
+                        </div>
+                        <div id="individualRoadmapContent" class="relative pl-2"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 6: EXCEL EXPORT -->
+            <section id="content-excel" class="space-y-6 hidden manager-only">
+                <div class="bg-emerald-950 text-white p-6 rounded-xl border border-emerald-800 shadow-md">
+                    <div class="flex justify-between items-center mb-2">
+                        <h2 class="text-xl font-bold">Interactive Excel Live Hub</h2>
+                        <span class="text-[10px] font-bold bg-emerald-700 text-emerald-100 px-2 py-0.5 rounded animate-pulse">Syncing Active</span>
+                    </div>
+                    <p class="text-xs text-emerald-200 mb-4">View the live cloud dataset. Copy raw CSV below for Excel import.</p>
+                    <textarea id="rawCsvText" readonly class="w-full text-xs font-mono bg-slate-900 text-emerald-400 p-3 rounded-lg h-48 focus:outline-none"></textarea>
+                    <button onclick="copyRawCsvText()" class="mt-3 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded text-xs font-bold">Copy to Clipboard</button>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Manager PIN Change Modal -->
+    <div id="pin-modal" class="fixed inset-0 z-[110] bg-slate-900/80 flex flex-col items-center justify-center p-4 hidden">
+        <div class="max-w-sm w-full bg-white rounded-xl shadow-2xl p-6">
+            <h3 class="text-lg font-bold text-slate-900 mb-2">Update Manager PIN</h3>
+            <p class="text-xs text-slate-500 mb-4">Set a new numeric PIN for manager dashboard access. This will sync globally.</p>
+            <input type="password" id="newManagerPin" placeholder="Enter new PIN" class="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition mb-4">
+            <div class="flex gap-2">
+                <button onclick="document.getElementById('pin-modal').classList.add('hidden')" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-lg text-xs transition">Cancel</button>
+                <button onclick="saveNewManagerPin()" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs transition">Save PIN</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        window.appState = {
+            role: null,
+            userId: null
+        };
+
+        window.globalManagerPin = localStorage.getItem('executive_cloud_pin') || '1234';
+
+        window.globalTeamData = [
+            {
+                id: 'aditya', name: 'Aditya', email: 'aditya@company.com', focus: 'High-impact executive conclusions',
+                baseline: { struct: 7, tone: 6, clarity: 5, pacing: 6 }, total: 24, tier: 'Tier 2 (Proficient)',
+                wk1: 25, wk2: 27, wk3: 29, wk4: 31, wk5: 32, quote: 'Strong structural flow highlighting pre/post-COVID changes.', drill: 'Focus on eliminating subtle crutches ("I guess so").'
+            },
+            {
+                id: 'vinay', name: 'Vinay', email: 'vinay@company.com', focus: 'Time management & Silent Pauses',
+                baseline: { struct: 6, tone: 6, clarity: 5, pacing: 5 }, total: 22, tier: 'Tier 2 (Proficient)',
+                wk1: 23, wk2: 25, wk3: 27, wk4: 28, wk5: 30, quote: 'Well-structured examples regarding mobile connectivity.', drill: 'When thinking, close mouth and hold a 1-second silent pause.'
+            },
+            {
+                id: 'mayank', name: 'Mayank', email: 'mayank@company.com', focus: 'Sentence & conjunction control',
+                baseline: { struct: 6, tone: 5, clarity: 6, pacing: 5 }, total: 22, tier: 'Tier 2 (Proficient)',
+                wk1: 23, wk2: 25, wk3: 26, wk4: 27, wk5: 29, quote: 'Clear examples regarding global communication.', drill: 'Focus on vocal energy and use intentional 1-second silent pauses.'
+            },
+            {
+                id: 'shubham', name: 'Shubham', email: 'shubham@company.com', focus: 'Eliminating hesitation fillers',
+                baseline: { struct: 6, tone: 5, clarity: 4, pacing: 5 }, total: 20, tier: 'Tier 3 (Developing)',
+                wk1: 21, wk2: 23, wk3: 24, wk4: 26, wk5: 27, quote: 'Logical customer communication flow.', drill: 'Apply strict PREP framework.'
+            },
+            {
+                id: 'sreelesh', name: 'Sreelesh', email: 'sreelesh@company.com', focus: 'PREP thought structuring',
+                baseline: { struct: 6, tone: 5, clarity: 4, pacing: 4 }, total: 19, tier: 'Tier 3 (Developing)',
+                wk1: 20, wk2: 22, wk3: 23, wk4: 25, wk5: 26, quote: 'Good topic relevance.', drill: 'Pre-structure 3 distinct bullet points.'
+            },
+            {
+                id: 'kunal', name: 'Kunal', email: 'kunal@company.com', focus: 'Balancing pros/cons structure',
+                baseline: { struct: 7, tone: 6, clarity: 5, pacing: 6 }, total: 24, tier: 'Tier 2 (Proficient)',
+                wk1: 25, wk2: 27, wk3: 29, wk4: 31, wk5: 32, quote: 'Strong comprehensive structure.', drill: 'Break down thoughts into distinct statements.'
+            },
+            {
+                id: 'shaarav', name: 'Shaarav', email: 'shaarav@company.com', focus: 'Eliminating mid-thought pauses',
+                baseline: { struct: 6, tone: 6, clarity: 6, pacing: 5 }, total: 23, tier: 'Tier 2 (Proficient)',
+                wk1: 24, wk2: 26, wk3: 28, wk4: 29, wk5: 31, quote: 'Great specific examples regarding mental health online accessibility.', drill: 'Focus on maintaining steady rhythm.'
+            }
+        ];
+
+        window.initCloudSimulator = async function() {
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    document.getElementById('auth-loading').classList.add('hidden');
+                    document.getElementById('auth-form-wrapper').classList.remove('hidden');
+                    resolve();
+                }, 1000); // Simulate network connection delay
+            });
+        };
+
+        window.setupAuthScreen = function() {
+            window.toggleAuthTab('manager');
+        };
+
+        window.toggleAuthTab = function(tab) {
+            const btnManager = document.getElementById('auth-tab-manager');
+            const btnEmployee = document.getElementById('auth-tab-employee');
+            
+            if (tab === 'manager') {
+                document.getElementById('auth-manager-form').classList.remove('hidden');
+                document.getElementById('auth-employee-form').classList.add('hidden');
+                
+                btnManager.classList.add('bg-white', 'shadow', 'text-emerald-800');
+                btnManager.classList.remove('text-slate-500');
+                
+                btnEmployee.classList.remove('bg-white', 'shadow', 'text-emerald-800');
+                btnEmployee.classList.add('text-slate-500');
+            } else {
+                document.getElementById('auth-employee-form').classList.remove('hidden');
+                document.getElementById('auth-manager-form').classList.add('hidden');
+                
+                btnEmployee.classList.add('bg-white', 'shadow', 'text-emerald-800');
+                btnEmployee.classList.remove('text-slate-500');
+                
+                btnManager.classList.remove('bg-white', 'shadow', 'text-emerald-800');
+                btnManager.classList.add('text-slate-500');
+            }
+        };
+
+        window.saveToCloud = async function() {
+            // Simulated cloud save to mock Firebase behavior
+            return new Promise(resolve => setTimeout(resolve, 300));
+        };
+
+        async function callGemini(prompt) {
+            const apiKey = ""; // Leave as-is. Passed securely by environment.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }]
+            };
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                return result.candidates?.[0]?.content?.parts?.[0]?.text || "AI analysis unavailable.";
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                return "AI analysis failed due to network error.";
+            }
+        }
+
+        window.changeManagerPinPrompt = function() {
+            document.getElementById('pin-modal').classList.remove('hidden');
+            document.getElementById('newManagerPin').value = '';
+        }
+
+        window.saveNewManagerPin = function() {
+            const newPin = document.getElementById('newManagerPin').value;
+            if(!newPin || newPin.length < 4) {
+                alert("PIN must be at least 4 characters.");
+                return;
+            }
+            window.globalManagerPin = newPin;
+            localStorage.setItem('executive_cloud_pin', newPin);
+            document.getElementById('pin-modal').classList.add('hidden');
+            showNotification("Manager PIN updated securely in the cloud.");
+        }
+
+        window.executeLogin = function(role) {
+            if (role === 'manager') {
+                const pin = document.getElementById('managerPin').value;
+                if (pin !== window.globalManagerPin) {
+                    document.getElementById('managerAuthError').classList.remove('hidden');
+                    return;
+                }
+                document.getElementById('managerAuthError').classList.add('hidden');
+                window.appState.role = 'manager';
+                window.appState.userId = 'admin';
+                document.getElementById('managerPin').value = ''; 
+            } else {
+                const emailInput = document.getElementById('employeeEmail').value.trim().toLowerCase();
+                const passInput = document.getElementById('employeePassword').value;
+                
+                const userObj = window.globalTeamData.find(u => u.email && u.email.toLowerCase() === emailInput);
+                
+                // For this POC, we check against a stored password or the default 'Demo123'.
+                const expectedPass = userObj ? (userObj.password || 'Demo123') : null;
+                
+                if (!userObj || passInput !== expectedPass) {
+                    document.getElementById('empAuthError').classList.remove('hidden');
+                    return;
+                }
+                
+                document.getElementById('empAuthError').classList.add('hidden');
+                window.appState.role = 'employee';
+                window.appState.userId = userObj.id;
+                
+                document.getElementById('employeeEmail').value = '';
+                document.getElementById('employeePassword').value = '';
+            }
+
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('app-container').classList.add('flex');
+
+            applyRolePermissions();
+            updateGlobalDashboards(); 
+            window.switchTab('overview');
+        }
+
+        window.executeLogout = function() {
+            window.appState.role = null;
+            window.appState.userId = null;
+            window.appState.currentOtp = null;
+            window.appState.activeEmail = null;
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('flex');
+            document.getElementById('auth-container').classList.remove('hidden');
+        }
+
+        function getVisibleData() {
+            if (window.appState.role === 'manager') return window.globalTeamData;
+            return window.globalTeamData.filter(user => user.id === window.appState.userId);
+        }
+
+        function applyRolePermissions() {
+            const isManager = window.appState.role === 'manager';
+            document.querySelectorAll('.manager-only').forEach(el => {
+                el.style.display = isManager ? '' : 'none';
+            });
+
+            const userObj = getVisibleData()[0];
+            if (isManager) {
+                document.getElementById('headerRoleBadge').innerHTML = '&#128100; Manager View';
+                document.getElementById('headerTitle').innerText = 'Executive Team Dashboard';
+                document.getElementById('headerSubtitle').innerText = 'Team Aggregates, Telemetry & Evaluation Hub';
+                document.getElementById('navOverviewText').innerText = 'Executive Overview';
+                document.getElementById('navScorecardText').innerText = 'Team Scorecards';
+                document.getElementById('navSimText').innerText = 'Reassessment Simulator';
+                document.getElementById('navTrainingText').innerText = 'Training Roadmap';
+
+                const audioDrop = document.getElementById('uploadExecutive');
+                audioDrop.innerHTML = '<option value="none">-- Select Speaker --</option>';
+                window.globalTeamData.forEach(u => audioDrop.innerHTML += `<option value="${u.id}">${u.name}</option>`);
+                audioDrop.innerHTML += '<option value="new" class="font-bold text-emerald-600">+ Add New Member</option>';
+                audioDrop.disabled = false;
+
+                const roadmapDrop = document.getElementById('roadmapSelect');
+                if(roadmapDrop) {
+                    roadmapDrop.innerHTML = '';
+                    window.globalTeamData.forEach(u => roadmapDrop.innerHTML += `<option value="${u.id}">${u.name}</option>`);
+                }
+                window.setTrainingView('weekly');
+            } else {
+                document.getElementById('headerRoleBadge').innerHTML = '&#128274; Employee Portal';
+                document.getElementById('headerTitle').innerText = `Welcome back, ${userObj.name}`;
+                document.getElementById('headerSubtitle').innerText = 'Personal Communication Growth Dashboard';
+                document.getElementById('navOverviewText').innerText = 'My Overview';
+                document.getElementById('navScorecardText').innerText = 'My Scorecard';
+                document.getElementById('navSimText').innerText = 'My Trajectory';
+                document.getElementById('navTrainingText').innerText = 'My Focus Roadmap';
+
+                const audioDrop = document.getElementById('uploadExecutive');
+                audioDrop.innerHTML = `<option value="${userObj.id}">${userObj.name}</option>`;
+                audioDrop.value = userObj.id;
+                audioDrop.disabled = true;
+
+                window.setTrainingView('individual');
+            }
+        }
+
+        let overviewRadarChart, overviewBarChart, overviewDonutChart, simulatorChart, audioAnalysisChart;
+
+        function updateGlobalDashboards() {
+            if(!window.appState.role) return;
+            const data = getVisibleData();
+            const isManager = window.appState.role === 'manager';
+            
+            let totalScore = 0; let tiers = { t1: 0, t2: 0, t3: 0 };
+            let sSum=0, tSum=0, cSum=0, pSum=0;
+
+            let gS=0, gT=0, gC=0, gP=0;
+            window.globalTeamData.forEach(m => { gS+=m.baseline.struct; gT+=m.baseline.tone; gC+=m.baseline.clarity; gP+=m.baseline.pacing; });
+            const teamAvgBase = window.globalTeamData.length ? [gS/window.globalTeamData.length, gT/window.globalTeamData.length, gC/window.globalTeamData.length, gP/window.globalTeamData.length].map(v => v.toFixed(1)) : [0,0,0,0];
+
+            data.forEach(m => {
+                totalScore += m.total;
+                if (m.total >= 30) tiers.t1++; else if (m.total >= 21) tiers.t2++; else tiers.t3++;
+                sSum += m.baseline.struct; tSum += m.baseline.tone; cSum += m.baseline.clarity; pSum += m.baseline.pacing;
+            });
+
+            const len = data.length;
+            const avg = len ? (totalScore / len).toFixed(1) : 0;
+
+            if (isManager) {
+                document.getElementById('statLabel1').innerText = 'Evaluated Team Sample';
+                document.getElementById('statValue1').innerText = `${len} Executives`;
+                document.getElementById('statLabel2').innerText = 'Baseline Team Average';
+                document.getElementById('statValue2').innerHTML = `${avg} <span class="text-xs text-slate-400">/ 40 pts</span>`;
+                document.getElementById('statLabel3').innerText = 'Baseline Tier Ratio';
+                document.getElementById('statValue3').innerText = `${tiers.t2} Proficient / ${tiers.t3} Dev`;
+            } else {
+                const me = data[0];
+                if(me) {
+                    document.getElementById('statLabel1').innerText = 'My Focus Area';
+                    document.getElementById('statValue1').innerText = me.focus;
+                    document.getElementById('statLabel2').innerText = 'My Baseline Score';
+                    document.getElementById('statValue2').innerHTML = `${me.total} <span class="text-xs text-slate-400">/ 40 pts</span>`;
+                    document.getElementById('statLabel3').innerText = 'My Current Tier';
+                    document.getElementById('statValue3').innerText = me.tier.split(' ')[0] + ' ' + me.tier.split(' ')[1];
+                }
+            }
+
+            if(overviewRadarChart) overviewRadarChart.destroy();
+            if(overviewBarChart) overviewBarChart.destroy();
+            if(overviewDonutChart) overviewDonutChart.destroy();
+
+            const radarCtx = document.getElementById('overviewSkillRadarChart').getContext('2d');
+            let radarDatasets = [];
+            if(isManager) {
+                radarDatasets.push({ label: 'Team Baseline Avg', data: teamAvgBase, backgroundColor: 'rgba(16, 185, 129, 0.2)', borderColor: 'rgba(16, 185, 129, 1)' });
+            } else {
+                const me = data[0];
+                radarDatasets.push({ label: 'My Scores', data: [me.baseline.struct, me.baseline.tone, me.baseline.clarity, me.baseline.pacing], backgroundColor: 'rgba(56, 189, 248, 0.25)', borderColor: '#0284c7' });
+                radarDatasets.push({ label: 'Team Avg', data: teamAvgBase, backgroundColor: 'transparent', borderColor: '#94a3b8', borderDash: [5, 5] });
+            }
+            overviewRadarChart = new Chart(radarCtx, { type: 'radar', data: { labels: ['Structure', 'Tone', 'Clarity', 'Pacing'], datasets: radarDatasets }, options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 10 } }, plugins: { legend: { display: !isManager, position: 'bottom' } } } });
+
+            const barCtx = document.getElementById('overviewBaselineBarChart').getContext('2d');
+            let barLabels = [], barData = [], barColors = [];
+            if(isManager) {
+                barLabels = data.map(d => d.name); barData = data.map(d => d.total); barColors = data.map(d => d.total >= 21 ? '#f59e0b' : '#f43f5e');
+            } else {
+                const me = data[0];
+                barLabels = ['Base', 'Wk1', 'Wk2', 'Wk3', 'Wk4', 'Wk5']; barData = [me.total, me.wk1, me.wk2, me.wk3, me.wk4, me.wk5]; barColors = barData.map(v => v >= 30 ? '#10b981' : v >= 21 ? '#f59e0b' : '#f43f5e');
+            }
+            overviewBarChart = new Chart(barCtx, { type: 'bar', data: { labels: barLabels, datasets: [{ data: barData, backgroundColor: barColors, borderRadius: 4 }] }, options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 0, max: 40 } }, plugins: { legend: { display: false } } } });
+
+            if (isManager) {
+                const donutCtx = document.getElementById('overviewTierDonutChart').getContext('2d');
+                overviewDonutChart = new Chart(donutCtx, { type: 'doughnut', data: { labels: ['Expert', 'Proficient', 'Dev'], datasets: [{ data: [tiers.t1, tiers.t2, tiers.t3], backgroundColor: ['#10b981', '#f59e0b', '#f43f5e'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
+            }
+
+            renderScorecards();
+            initSimulator();
+            updateExcelDataSheet();
+        }
+
+        window.switchTab = function(tabId) {
+            document.querySelectorAll('main > section').forEach(sec => sec.classList.add('hidden'));
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('bg-emerald-50', 'text-emerald-700', 'font-semibold', 'border-b-2', 'border-emerald-600');
+                tab.classList.add('text-slate-600');
+            });
+            document.getElementById(`content-${tabId}`).classList.remove('hidden');
+            const activeNav = document.getElementById(`tab-${tabId}`);
+            if(activeNav) activeNav.classList.add('bg-emerald-50', 'text-emerald-700', 'font-semibold', 'border-b-2', 'border-emerald-600');
+            
+            if(tabId === 'simulator' && simulatorChart) simulatorChart.resize();
+            if(tabId === 'audio' && audioAnalysisChart) audioAnalysisChart.resize();
+        }
+
+        function renderScorecards() {
+            const grid = document.getElementById('scorecardsGrid');
+            grid.innerHTML = '';
+            getVisibleData().forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'scorecard-item bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4';
+                card.setAttribute('data-name', item.name.toLowerCase());
+                const tierColor = item.total >= 30 ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : item.total >= 21 ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-rose-100 text-rose-800 border-rose-200';
+                card.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div><h3 class="font-bold text-slate-900 text-base">${item.name}</h3><p class="text-xs text-slate-500 truncate max-w-[200px]">${item.focus}</p></div>
+                        <span class="px-2.5 py-1 text-[10px] font-bold rounded-full border ${tierColor}">${item.tier}</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg space-y-2 text-xs">
+                        <div class="flex justify-between items-center font-bold text-slate-700 border-b border-slate-200 pb-1.5"><span>Baseline:</span><span class="text-base font-extrabold">${item.total} <span class="text-[10px] font-normal text-slate-500">/ 40</span></span></div>
+                        <div class="grid grid-cols-2 gap-2 text-[11px] text-slate-600">
+                            <div>Struct: <strong class="text-slate-800">${item.baseline.struct}/10</strong></div><div>Tone: <strong class="text-slate-800">${item.baseline.tone}/10</strong></div>
+                            <div>Clarity: <strong class="text-slate-800">${item.baseline.clarity}/10</strong></div><div>Pacing: <strong class="text-slate-800">${item.baseline.pacing}/10</strong></div>
+                        </div>
+                    </div>
+                    <div><h4 class="text-xs font-bold text-slate-800 uppercase mb-1">Audio Note:</h4><p class="text-xs text-slate-600 italic bg-amber-50/50 p-2.5 rounded border border-amber-100">"${item.quote}"</p></div>
+                    <div><h4 class="text-xs font-bold text-slate-800 uppercase mb-1">Weekly Focus:</h4><p class="text-xs text-slate-700 bg-slate-100 p-2.5 rounded">${item.drill}</p></div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        window.filterScorecards = function() {
+            const val = document.getElementById('scorecardSearch').value.toLowerCase();
+            document.querySelectorAll('.scorecard-item').forEach(card => {
+                if(card.getAttribute('data-name').includes(val)) card.style.display = ''; else card.style.display = 'none';
+            });
+        }
+
+        function initSimulator() {
+            const tbody = document.getElementById('simulatorTableBody');
+            const data = getVisibleData();
+            
+            if (tbody.children.length !== data.length) {
+                tbody.innerHTML = '';
+                data.forEach((item) => {
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-50 transition';
+                    const inputCls = "w-10 sm:w-12 px-1 py-0.5 text-xs text-center border border-slate-300 rounded focus:ring-1 focus:ring-emerald-500 bg-white";
+                    tr.innerHTML = `
+                        <td class="py-2.5 px-2 font-semibold text-slate-900">${item.name}</td>
+                        <td class="py-2.5 px-1 text-center font-bold text-slate-700">${item.total}</td>
+                        <td class="py-2.5 px-1 text-center"><input type="number" id="sim-wk1-${item.id}" value="${item.wk1}" onchange="handleSimChange('${item.id}', 'wk1', this.value)" class="${inputCls}"></td>
+                        <td class="py-2.5 px-1 text-center"><input type="number" id="sim-wk2-${item.id}" value="${item.wk2}" onchange="handleSimChange('${item.id}', 'wk2', this.value)" class="${inputCls}"></td>
+                        <td class="py-2.5 px-1 text-center"><input type="number" id="sim-wk3-${item.id}" value="${item.wk3}" onchange="handleSimChange('${item.id}', 'wk3', this.value)" class="${inputCls}"></td>
+                        <td class="py-2.5 px-1 text-center"><input type="number" id="sim-wk4-${item.id}" value="${item.wk4}" onchange="handleSimChange('${item.id}', 'wk4', this.value)" class="${inputCls}"></td>
+                        <td class="py-2.5 px-1 text-center"><input type="number" id="sim-wk5-${item.id}" value="${item.wk5}" onchange="handleSimChange('${item.id}', 'wk5', this.value)" class="${inputCls} font-bold text-emerald-700 border-emerald-300 bg-emerald-50"></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                data.forEach((item) => {
+                    document.getElementById(`sim-wk1-${item.id}`).value = item.wk1;
+                    document.getElementById(`sim-wk2-${item.id}`).value = item.wk2;
+                    document.getElementById(`sim-wk3-${item.id}`).value = item.wk3;
+                    document.getElementById(`sim-wk4-${item.id}`).value = item.wk4;
+                    document.getElementById(`sim-wk5-${item.id}`).value = item.wk5;
+                });
+            }
+
+            if (!simulatorChart) {
+                const ctxSim = document.getElementById('simulatorProgressChart').getContext('2d');
+                simulatorChart = new Chart(ctxSim, {
+                    type: 'line', data: { labels: ['Base', 'Wk 1', 'Wk 2', 'Wk 3', 'Wk 4', 'Wk 5'], datasets: [{ label: 'Average Score', data: [], borderColor: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderWidth: 2, fill: true, tension: 0.3 }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { min: 15, max: 40 } }, plugins: { legend: { display: false } } }
+                });
+            }
+            recalcSimulatorTotals(data);
+        }
+
+        window.handleSimChange = async function(memberId, weekKey, value) {
+            const val = parseInt(value) || 0;
+            const member = window.globalTeamData.find(m => m.id === memberId);
+            if (member) member[weekKey] = val;
+            
+            showNotification(`Syncing ${weekKey} score to Cloud...`);
+            await saveToCloud();
+            recalcSimulatorTotals(getVisibleData());
+            updateExcelDataSheet();
+        }
+
+        function recalcSimulatorTotals(data) {
+            let sums = { b:0, w1:0, w2:0, w3:0, w4:0, w5:0 };
+            data.forEach(item => {
+                sums.b += item.total; sums.w1 += item.wk1; sums.w2 += item.wk2; sums.w3 += item.wk3; sums.w4 += item.wk4; sums.w5 += item.wk5;
+            });
+            const len = data.length || 1;
+            if(simulatorChart) {
+                simulatorChart.data.datasets[0].data = [sums.b/len, sums.w1/len, sums.w2/len, sums.w3/len, sums.w4/len, sums.w5/len].map(v => v.toFixed(1));
+                simulatorChart.update();
+            }
+        }
+
+        const weeklyPrompts = {
+            wk1: { title: 'Week 1: The PREP Framework', prompt: '"Update on a recent issue and resolution steps."' },
+            wk2: { title: 'Week 2: The Silent Pause', prompt: '"Explain a complex policy to a client without fillers."' },
+            wk3: { title: 'Week 3: Bottom Line Up Front', prompt: '"Pitch a process improvement for the team."' },
+            wk4: { title: 'Week 4: Under Pressure Simulation', prompt: '"Summarize performance: one win, one loss."' },
+            wk5: { title: 'Week 5: AI Final Cloud Assessment', prompt: '"Most critical customer experience skill for next year?"' }
+        };
+
+        window.setTrainingView = function(mode) {
+            if(mode === 'weekly' && window.appState.role === 'manager') {
+                document.getElementById('viewWeeklyContainer').classList.remove('hidden');
+                document.getElementById('viewIndividualContainer').classList.add('hidden');
+                document.getElementById('btnViewWeekly').className = "px-5 py-2 text-xs font-bold rounded-md bg-white shadow text-slate-800";
+                document.getElementById('btnViewIndividual').className = "px-5 py-2 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700";
+                window.switchWeek('wk1');
+            } else {
+                document.getElementById('viewIndividualContainer').classList.remove('hidden');
+                document.getElementById('viewWeeklyContainer').classList.add('hidden');
+                if(window.appState.role === 'manager') {
+                    document.getElementById('btnViewIndividual').className = "px-5 py-2 text-xs font-bold rounded-md bg-white shadow text-slate-800";
+                    document.getElementById('btnViewWeekly').className = "px-5 py-2 text-xs font-bold rounded-md text-slate-500 hover:text-slate-700";
+                }
+                window.renderIndividualRoadmap();
+            }
+        }
+
+        window.switchWeek = function(wkKey) {
+            if(window.appState.role !== 'manager') return;
+            document.querySelectorAll('.week-tab').forEach(t => t.className = "week-tab px-4 py-2 rounded-lg text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200");
+            const act = document.getElementById(`weekTab-${wkKey}`);
+            if(act) act.className = "week-tab px-4 py-2 rounded-lg text-xs font-bold bg-emerald-600 text-white";
+            
+            const p = weeklyPrompts[wkKey];
+            if(p) {
+                document.getElementById('weekContent').innerHTML = `
+                    <h3 class="text-lg font-bold text-slate-900">${p.title}</h3>
+                    <div class="bg-amber-50 p-4 rounded border border-amber-200">
+                        <span class="text-[11px] font-bold text-amber-800 block mb-1">Assigned Scenario:</span>
+                        <p class="text-sm font-semibold italic">"${p.prompt}"</p>
+                    </div>
+                `;
+            }
+        }
+
+        window.renderIndividualRoadmap = function() {
+            const container = document.getElementById('individualRoadmapContent');
+            let targetId = window.appState.role === 'manager' ? document.getElementById('roadmapSelect').value : window.appState.userId;
+            const execData = window.globalTeamData.find(e => e.id === targetId);
+            if(!execData) return;
+
+            let html = `<div class="roadmap-timeline-line">`;
+            ['wk1', 'wk2', 'wk3', 'wk4'].forEach((wk, i) => {
+                const data = weeklyPrompts[wk];
+                html += `
+                    <div class="relative flex gap-6 mb-6">
+                        <div class="flex flex-col items-center z-10"><div class="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold text-xs shadow border-4 border-white">Wk ${i+1}</div></div>
+                        <div class="flex-1 bg-slate-50 border border-slate-200 p-4 rounded-xl shadow-sm">
+                            <div class="font-bold text-slate-800 text-sm mb-1">${data.title}</div>
+                            <div class="bg-amber-50 p-3 rounded border border-amber-100 text-xs mb-2"><span class="font-bold block mb-0.5 text-amber-800">Prompt:</span><span class="italic">${data.prompt}</span></div>
+                            <div class="bg-emerald-50/50 p-3 rounded border border-emerald-100 text-xs"><span class="font-bold block text-emerald-800 mb-0.5">Custom Personal Drill:</span><span class="text-emerald-900">${execData.drill} Focus specifically on: ${execData.focus}.</span></div>
+                        </div>
+                    </div>`;
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+        }
+
+        let activeAudioData = null;
+
+        window.handleExecutiveChange = function() {
+            const val = document.getElementById('uploadExecutive').value;
+            if (val === 'new') document.getElementById('newExecutiveName').classList.remove('hidden');
+            else document.getElementById('newExecutiveName').classList.add('hidden');
+        }
+
+        window.handleFileSelect = function(event) { if (event.target.files.length > 0) processAudio(event.target.files[0]); }
+        
+        function processAudio(file) {
+            const player = document.getElementById('audioElement');
+            player.src = URL.createObjectURL(file);
+            document.getElementById('audioLoadedTitle').innerText = `Loaded: ${file.name}`;
+            
+            player.onloadedmetadata = function() {
+                const estWpm = Math.floor(125 + (file.size % 45));
+                const structS = Math.min(10, Math.max(5, 7 + Math.floor((file.size % 3) - 1)));
+                const toneS = Math.min(10, Math.max(5, 6 + Math.floor((file.name.length % 3))));
+                const tot = structS + toneS + 6 + 7;
+                
+                activeAudioData = {
+                    title: file.name,
+                    duration: `${Math.floor(player.duration / 60)}m ${Math.floor(player.duration % 60)}s`,
+                    total: tot, tier: tot >= 30 ? 'Tier 1' : tot >= 21 ? 'Tier 2' : 'Tier 3',
+                    scores: { struct: structS, tone: toneS, clarity: 6, pacing: 7 }, wpm: estWpm, fillers: 2, pauses: 4
+                };
+                document.getElementById('audioPlayerCard').classList.remove('hidden');
+            };
+        }
+
+        window.loadSampleAudio = function(key) {
+            activeAudioData = { title: key + '.mp3', duration: '1m 30s', total: 27, tier: 'Tier 2', scores: {struct:7, tone:7, clarity:6, pacing:7}, wpm: 135, fillers: 1, pauses: 3 };
+            document.getElementById('audioLoadedTitle').innerText = `Loaded Sample: ${key}`;
+            document.getElementById('audioPlayerCard').classList.remove('hidden');
+            window.runAudioAnalysis();
+        }
+
+        window.runAudioAnalysis = function() {
+            if(!activeAudioData) return;
+            document.getElementById('audioAnalysisIdle').classList.add('hidden');
+            document.getElementById('audioAnalysisResults').classList.add('hidden');
+            document.getElementById('audioAnalysisLoading').classList.remove('hidden');
+
+            setTimeout(() => {
+                document.getElementById('audioAnalysisLoading').classList.add('hidden');
+                document.getElementById('audioAnalysisResults').classList.remove('hidden');
+                
+                const d = activeAudioData;
+                document.getElementById('resultTotalScore').innerText = d.total;
+                document.getElementById('resultTierBadge').innerText = d.tier;
+                document.getElementById('scoreStruct').innerText = `${d.scores.struct}/10`;
+                document.getElementById('scoreTone').innerText = `${d.scores.tone}/10`;
+                document.getElementById('scoreClarity').innerText = `${d.scores.clarity}/10`;
+                document.getElementById('scorePacing').innerText = `${d.scores.pacing}/10`;
+
+                // Render Audio Radar
+                const ctx = document.getElementById('audioAnalysisRadarChart').getContext('2d');
+                if(audioAnalysisChart) audioAnalysisChart.destroy();
+                audioAnalysisChart = new Chart(ctx, { type: 'radar', data: { labels: ['Structure', 'Tone', 'Clarity', 'Pacing'], datasets: [ { label: 'Uploaded Audio', data: [d.scores.struct, d.scores.tone, d.scores.clarity, d.scores.pacing], backgroundColor: 'rgba(56, 189, 248, 0.25)', borderColor: '#0284c7' } ] }, options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 10 } }, plugins: { legend: { position: 'bottom' } } } });
+
+                document.getElementById('resultFeedbackObs').innerHTML = `<span class="animate-pulse text-sky-500">✨ AI generating observation...</span>`;
+                document.getElementById('resultFeedbackDrill').innerHTML = `<span class="animate-pulse text-sky-500">✨ AI generating prescribed drill...</span>`;
+                
+                const aiPrompt = `Act as an expert executive speech coach. Evaluate a customer support executive's audio recording.
+Metrics: ${d.wpm || '135'} WPM, ${d.fillers || '2'} filler words, ${d.pauses || '3'} natural pauses.
+Scores: Structure ${d.scores.struct}/10, Tone ${d.scores.tone}/10, Clarity ${d.scores.clarity}/10, Pacing ${d.scores.pacing}/10.
+Provide exactly two sentences.
+Sentence 1: A brief, professional observation of their performance.
+Sentence 2: A specific, actionable rehearsal drill to improve their weakest area.
+Format exactly like this: [Observation] | [Drill]`;
+
+                callGemini(aiPrompt).then(response => {
+                    const parts = response.split('|');
+                    const obs = parts[0] ? parts[0].replace(/\[|\]/g, '').trim() : "Analysis complete.";
+                    const drill = parts[1] ? parts[1].replace(/\[|\]/g, '').trim() : "Focus on pacing.";
+                    
+                    document.getElementById('resultFeedbackObs').innerText = `"${obs}"`;
+                    document.getElementById('resultFeedbackDrill').innerText = `"${drill}"`;
+                    
+                    d.quote = obs;
+                    d.drill = drill;
+                    
+                    syncAudioToCloud(d);
+                });
+
+            }, 1000);
+        }
+
+        async function syncAudioToCloud(data) {
+            const execId = document.getElementById('uploadExecutive').value;
+            const weekKey = document.getElementById('uploadWeek').value;
+            if (execId === 'none') return;
+
+            if (execId === 'new') {
+                const execName = document.getElementById('newExecutiveName').value || `New_Member_${Date.now()}`;
+                const newId = execName.toLowerCase().replace(/\s+/g, '');
+                const newEmail = `${newId}@company.com`; 
+                const newMember = {
+                    id: newId, name: execName, email: newEmail, focus: 'Communication Alignment',
+                    baseline: { struct: data.scores.struct, tone: data.scores.tone, clarity: data.scores.clarity, pacing: data.scores.pacing },
+                    total: data.total, tier: data.tier,
+                    wk1: data.total + 1, wk2: data.total + 2, wk3: data.total + 4, wk4: data.total + 5, wk5: data.total + 7,
+                    quote: 'Analyzed via Audio Sandbox', drill: 'Monitor pace and fillers.'
+                };
+                window.globalTeamData.push(newMember);
+                document.getElementById('uploadExecutive').value = newId; 
+                showNotification(`New member created! Simulated login email: ${newEmail}`);
+            } else {
+                const member = window.globalTeamData.find(m => m.id === execId);
+                if (member) {
+                    if (weekKey === 'total') {
+                        member.baseline = data.scores; member.total = data.total; member.tier = data.tier;
+                    } else {
+                        member[weekKey] = data.total;
+                    }
+                }
+                showNotification(`Score applied to ${weekKey} and synced globally.`);
+            }
+            
+            await saveToCloud();
+            updateGlobalDashboards();
+        }
+
+        function showNotification(msg) {
+            const modal = document.createElement('div');
+            modal.className = 'fixed bottom-5 right-5 bg-emerald-600 text-white px-6 py-3 rounded-xl shadow-lg border border-emerald-500 text-sm font-bold animate-pulse z-50';
+            modal.innerHTML = `&#9729;&#65039; ${msg}`;
+            document.body.appendChild(modal);
+            setTimeout(() => modal.remove(), 4000);
+        }
+
+        function updateExcelDataSheet() {
+            if(window.appState.role !== 'manager') return;
+            let rawCsv = "Name,Focus,Base Total,Wk 1,Wk 2,Wk 3,Wk 4,Wk 5,Projected Tier\n";
+            window.globalTeamData.forEach(item => {
+                const tier = item.wk5 >= 30 ? "Tier 1 (Expert)" : item.wk5 >= 21 ? "Tier 2 (Proficient)" : "Tier 3 (Dev)";
+                rawCsv += `"${item.name}","${item.focus}",${item.total},${item.wk1},${item.wk2},${item.wk3},${item.wk4},${item.wk5},"${tier}"\n`;
+            });
+            const tb = document.getElementById('rawCsvText');
+            if(tb) tb.value = rawCsv;
+        }
+
+        window.copyRawCsvText = function() {
+            const el = document.getElementById("rawCsvText");
+            el.select(); navigator.clipboard.writeText(el.value);
+            showNotification("Live CSV Data Copied to Clipboard!");
+        }
+
+        window.exportToExcel = function(filename) {
+            if(window.appState.role !== 'manager') return;
+            const csvContent = "data:text/csv;charset=utf-8," + document.getElementById('rawCsvText').value;
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a"); link.setAttribute("href", encodedUri); link.setAttribute("download", filename);
+            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+        }
+
+        window.copyExecutiveText = function() {
+            const el = document.getElementById("simExecutiveText");
+            el.select(); navigator.clipboard.writeText(el.value);
+            showNotification("Executive Statement Copied!");
+        }
+
+        window.generateAIExtendedSummary = async function() {
+            const btn = document.querySelector('button[onclick="generateAIExtendedSummary()"]');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = `<span class="animate-spin">&#9881;</span> Generating...`;
+            btn.disabled = true;
+
+            // Gather current state data to feed Gemini Context
+            const data = getVisibleData();
+            let totalBase = 0, totalFinal = 0;
+            data.forEach(item => { totalBase += item.total; totalFinal += item.wk5; });
+            const avgBase = (totalBase / data.length).toFixed(1);
+            const avgFinal = (totalFinal / data.length).toFixed(1);
+            const uplift = (((avgFinal - avgBase) / avgBase) * 100).toFixed(1);
+
+            const prompt = `Act as a Chief Operating Officer (COO). Take the following raw data of a communication training program and write a professional, impressive 3-4 sentence executive briefing. Focus on business impact, clarity improvement, and leadership readiness. Do not use bold formatting.
+            Raw Data: Team of ${data.length} executives progressed from an average baseline score of ${avgBase}/40 to a final score of ${avgFinal}/40, an uplift of ${uplift}%.`;
+
+            const aiSummary = await callGemini(prompt);
+            
+            // Typewriter effect to display output
+            const textArea = document.getElementById('simExecutiveText');
+            textArea.value = "";
+            let i = 0;
+            const typeWriter = setInterval(() => {
+                textArea.value += aiSummary.charAt(i);
+                i++;
+                if (i >= aiSummary.length) clearInterval(typeWriter);
+            }, 10);
+
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }
+
+        // App Boot
+        initCloudSimulator().then(() => {
+            setupAuthScreen();
+        });
+    </script>
+</body>
+</html>
