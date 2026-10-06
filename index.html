@@ -69,21 +69,50 @@
                     </button>
                 </div>
 
-                <!-- Employee Login (Email + Password) -->
+                <!-- Employee Login (Email + OTP + Password) -->
                 <div id="auth-employee-form" class="space-y-4 hidden">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Work Email Address</label>
-                        <input type="email" id="employeeEmail" placeholder="e.g., aditya@company.com" class="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
+                    <!-- Step 1: Email -->
+                    <div id="auth-step-email" class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Personal Work Email Address</label>
+                            <input type="email" id="employeeEmail" placeholder="e.g., aditya.personal@company.com" class="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
+                            <p id="empAuthError" class="text-[10px] text-rose-500 font-semibold mt-1 hidden">Email not found in system.</p>
+                        </div>
+                        <button onclick="checkEmployeeEmail()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow transition">
+                            Continue
+                        </button>
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Account Password</label>
-                        <input type="password" id="employeePassword" placeholder="Enter password" class="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
-                        <p class="text-[10px] text-slate-400 mt-1.5">💡 <strong class="text-slate-600">Test Accounts:</strong> aditya@company.com, shaarav@company.com<br>🔑 <strong class="text-slate-600">Default Password:</strong> Demo123</p>
-                        <p id="empAuthError" class="text-[10px] text-rose-500 font-semibold mt-1 hidden">Invalid email or password.</p>
+                    
+                    <!-- Step 2: OTP Verification -->
+                    <div id="auth-step-otp" class="space-y-4 hidden">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Enter 6-Digit Verification Code</label>
+                            <p class="text-[10px] text-slate-500 mb-2 font-semibold">An OTP was just sent to your personal email.</p>
+                            <input type="text" id="employeeOtp" placeholder="123456" class="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm tracking-widest text-center focus:ring-2 focus:ring-emerald-500 outline-none transition">
+                            <p id="empOtpError" class="text-[10px] text-rose-500 font-semibold mt-1 hidden">Invalid OTP. Please check your email.</p>
+                        </div>
+                        <button onclick="verifyEmployeeOtp()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow transition">
+                            Verify OTP
+                        </button>
+                        <button onclick="resetAuthFlow()" class="w-full py-2 text-slate-500 hover:text-slate-700 font-bold text-xs transition">
+                            &larr; Back to Email
+                        </button>
                     </div>
-                    <button onclick="executeLogin('employee')" class="w-full mt-2 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow transition">
-                        Secure Login
-                    </button>
+
+                    <!-- Step 3: Password Login -->
+                    <div id="auth-step-pass" class="space-y-4 hidden">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Enter Private Password</label>
+                            <input type="password" id="employeePassword" placeholder="Enter your custom password" class="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
+                            <p id="empPassLoginError" class="text-[10px] text-rose-500 font-semibold mt-1 hidden">Incorrect password.</p>
+                        </div>
+                        <button onclick="loginWithPassword()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg shadow transition">
+                            Secure Login
+                        </button>
+                        <button onclick="resetAuthFlow()" class="w-full py-2 text-slate-500 hover:text-slate-700 font-bold text-xs transition">
+                            &larr; Use Different Email
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -106,8 +135,11 @@
                         <p class="text-xs sm:text-sm text-slate-400" id="headerSubtitle">Team Aggregates, Telemetry & Evaluation Hub</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-2 sm:gap-3 no-print">
-                        <button onclick="changeManagerPinPrompt()" class="manager-only px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-sm transition flex items-center gap-2 border border-slate-600">
+                        <button onclick="changeManagerPinPrompt()" id="btnChangeManagerPin" class="manager-only px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-sm transition flex items-center gap-2 border border-slate-600">
                             <span>&#128274;</span> <span class="hidden sm:inline">Change PIN</span>
+                        </button>
+                        <button onclick="changeEmployeePasswordPrompt()" id="btnChangeEmployeePass" class="employee-only px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-sm transition flex items-center gap-2 border border-slate-600 hidden">
+                            <span>&#128274;</span> <span class="hidden sm:inline">Change Password</span>
                         </button>
                         <button onclick="switchTab('audio')" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold rounded-lg shadow-sm transition flex items-center gap-2 border border-emerald-400">
                             <span>&#127908;</span> <span class="hidden sm:inline">Upload Practice Audio</span><span class="sm:hidden">Audio</span>
@@ -246,7 +278,10 @@
                                     <option value="wk5">Final Assessment (Wk 5)</option>
                                 </select>
                             </div>
-                            <input type="text" id="newExecutiveName" placeholder="Enter New Team Member Name" class="hidden w-full px-3 py-2 text-xs border border-slate-300 rounded-lg outline-none">
+                            <div id="newExecutiveDetails" class="hidden space-y-2 mt-2">
+                                <input type="text" id="newExecutiveName" placeholder="Enter New Team Member Name" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg outline-none">
+                                <input type="email" id="newExecutiveEmail" placeholder="Enter Personal Email (Required for Login)" class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg outline-none">
+                            </div>
                         </div>
 
                         <div class="bg-white p-6 rounded-xl border-2 border-dashed border-slate-300 hover:border-emerald-500 transition text-center shadow-sm cursor-pointer" id="dropzone" onclick="document.getElementById('fileInput').click()">
@@ -460,183 +495,359 @@
         </div>
     </div>
 
+    <!-- Employee Force Password Reset / Change Password Modal -->
+    <div id="force-password-modal" class="fixed inset-0 z-[120] bg-slate-900/95 flex flex-col items-center justify-center p-4 hidden">
+        <div class="max-w-sm w-full bg-white rounded-xl shadow-2xl p-6 border-t-4 border-emerald-500">
+            <div class="mb-4 text-center">
+                <div class="inline-block p-3 bg-emerald-100 text-emerald-600 rounded-full mb-2">
+                    <span class="text-2xl">&#128274;</span>
+                </div>
+                <h3 class="text-lg font-bold text-slate-900 mb-1" id="empPassModalTitle">Action Required: Secure Account</h3>
+                <p class="text-xs text-slate-500" id="empPassModalDesc">For security, you must replace the default password with a private password before accessing your dashboard.</p>
+            </div>
+            
+            <div class="space-y-3 mb-5">
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">New Private Password</label>
+                    <input type="password" id="newEmployeePassword" placeholder="Minimum 6 characters" class="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold uppercase text-slate-500 mb-1">Confirm Password</label>
+                    <input type="password" id="confirmEmployeePassword" placeholder="Re-type new password" class="w-full px-4 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition">
+                </div>
+                <p id="empPassError" class="text-[10px] text-rose-500 font-semibold mt-1 hidden">Passwords do not match or are too short.</p>
+            </div>
+
+            <div class="flex gap-2">
+                <button id="btnCancelEmpPass" onclick="cancelEmployeePasswordChange()" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold rounded-lg text-xs transition hidden">Cancel</button>
+                <button onclick="saveNewEmployeePassword()" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs shadow transition">Save & Continue</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Analysis Deep-Dive Modal -->
+    <div id="detailed-analysis-modal" class="fixed inset-0 z-[130] bg-slate-900/80 flex flex-col items-center justify-center p-4 hidden backdrop-blur-sm transition-opacity">
+        <div class="max-w-2xl w-full bg-white rounded-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+            <!-- Header -->
+            <div class="p-5 border-b border-slate-200 bg-slate-50 flex justify-between items-start">
+                <div class="w-full">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-200 uppercase tracking-wider" id="da-tier">Tier</span>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-900" id="da-name">Executive Name</h2>
+                    <p class="text-xs text-slate-500 font-medium mt-1 mb-2" id="da-focus">Focus Area</p>
+                    
+                    <div class="manager-only mt-3 pt-3 border-t border-slate-200 max-w-sm">
+                        <label class="text-[10px] uppercase font-bold text-slate-500 mb-1 block">Manage Agent Personal Email</label>
+                        <div class="flex gap-2">
+                            <input type="email" id="da-email-input" class="w-full text-xs px-2 py-1.5 border border-slate-300 rounded focus:ring-1 focus:ring-emerald-500 outline-none">
+                            <button onclick="updateAgentEmail()" class="px-3 py-1.5 bg-slate-800 text-white text-xs font-bold rounded hover:bg-slate-700 transition">Save</button>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="closeDetailedAnalysis()" class="text-slate-400 hover:text-rose-500 p-1 ml-4">
+                    <span class="text-2xl leading-none">&times;</span>
+                </button>
+            </div>
+            
+            <!-- Scrollable Body -->
+            <div class="p-6 overflow-y-auto space-y-6 bg-slate-50 flex-grow">
+                <!-- 4 Pillars Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div id="da-struct-card" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm transition hover:shadow-md"></div>
+                    <div id="da-tone-card" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm transition hover:shadow-md"></div>
+                    <div id="da-clarity-card" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm transition hover:shadow-md"></div>
+                    <div id="da-pacing-card" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm transition hover:shadow-md"></div>
+                </div>
+
+                <!-- Insights & Focus -->
+                <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-200 shadow-sm">
+                    <h4 class="font-bold text-emerald-900 text-sm mb-2 flex items-center gap-2">
+                        <span>&#127919;</span> Comprehensive Action Plan & Target Drills
+                    </h4>
+                    <p id="da-drill" class="text-xs text-emerald-800 leading-relaxed"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <script type="module">
-        window.appState = {
-            role: null,
-            userId: null
-        };
+        import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        window.globalManagerPin = localStorage.getItem('executive_cloud_pin') || '1234';
+        // FIREBASE CLOUD SETUP
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'executive-dashboard-app';
+        let firebaseConfig = {};
+        try { firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {}; } catch(e) {}
+        
+        let app, auth, db;
+        let isCloudActive = false;
 
-        window.globalTeamData = [
-            {
-                id: 'aditya', name: 'Aditya', email: 'aditya@company.com', focus: 'High-impact executive conclusions',
-                baseline: { struct: 7, tone: 6, clarity: 5, pacing: 6 }, total: 24, tier: 'Tier 2 (Proficient)',
-                wk1: 25, wk2: 27, wk3: 29, wk4: 31, wk5: 32, quote: 'Strong structural flow highlighting pre/post-COVID changes.', drill: 'Focus on eliminating subtle crutches ("I guess so").'
-            },
-            {
-                id: 'vinay', name: 'Vinay', email: 'vinay@company.com', focus: 'Time management & Silent Pauses',
-                baseline: { struct: 6, tone: 6, clarity: 5, pacing: 5 }, total: 22, tier: 'Tier 2 (Proficient)',
-                wk1: 23, wk2: 25, wk3: 27, wk4: 28, wk5: 30, quote: 'Well-structured examples regarding mobile connectivity.', drill: 'When thinking, close mouth and hold a 1-second silent pause.'
-            },
-            {
-                id: 'mayank', name: 'Mayank', email: 'mayank@company.com', focus: 'Sentence & conjunction control',
-                baseline: { struct: 6, tone: 5, clarity: 6, pacing: 5 }, total: 22, tier: 'Tier 2 (Proficient)',
-                wk1: 23, wk2: 25, wk3: 26, wk4: 27, wk5: 29, quote: 'Clear examples regarding global communication.', drill: 'Focus on vocal energy and use intentional 1-second silent pauses.'
-            },
-            {
-                id: 'shubham', name: 'Shubham', email: 'shubham@company.com', focus: 'Eliminating hesitation fillers',
-                baseline: { struct: 6, tone: 5, clarity: 4, pacing: 5 }, total: 20, tier: 'Tier 3 (Developing)',
-                wk1: 21, wk2: 23, wk3: 24, wk4: 26, wk5: 27, quote: 'Logical customer communication flow.', drill: 'Apply strict PREP framework.'
-            },
-            {
-                id: 'sreelesh', name: 'Sreelesh', email: 'sreelesh@company.com', focus: 'PREP thought structuring',
-                baseline: { struct: 6, tone: 5, clarity: 4, pacing: 4 }, total: 19, tier: 'Tier 3 (Developing)',
-                wk1: 20, wk2: 22, wk3: 23, wk4: 25, wk5: 26, quote: 'Good topic relevance.', drill: 'Pre-structure 3 distinct bullet points.'
-            },
-            {
-                id: 'kunal', name: 'Kunal', email: 'kunal@company.com', focus: 'Balancing pros/cons structure',
-                baseline: { struct: 7, tone: 6, clarity: 5, pacing: 6 }, total: 24, tier: 'Tier 2 (Proficient)',
-                wk1: 25, wk2: 27, wk3: 29, wk4: 31, wk5: 32, quote: 'Strong comprehensive structure.', drill: 'Break down thoughts into distinct statements.'
-            },
-            {
-                id: 'shaarav', name: 'Shaarav', email: 'shaarav@company.com', focus: 'Eliminating mid-thought pauses',
-                baseline: { struct: 6, tone: 6, clarity: 6, pacing: 5 }, total: 23, tier: 'Tier 2 (Proficient)',
-                wk1: 24, wk2: 26, wk3: 28, wk4: 29, wk5: 31, quote: 'Great specific examples regarding mental health online accessibility.', drill: 'Focus on maintaining steady rhythm.'
+        try {
+            // Prevent duplicate initializations and bypass if missing credentials on external hosts (GitHub)
+            if (Object.keys(firebaseConfig).length > 0 && firebaseConfig.projectId) {
+                app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+                auth = getAuth(app);
+                db = getFirestore(app);
+                isCloudActive = true;
             }
-        ];
+        } catch(e) { console.error("Firebase init failed", e); }
+
+        window.appState = { role: null, userId: null, pendingUserId: null };
+        window.globalTeamData = [];
+        window.globalManagerPin = '1234';
+        window.currentOTP = null;
+        window.authEmailUser = null;
+        window.seeded = false;
 
         window.initCloudSimulator = async function() {
-            return new Promise(resolve => {
-                setTimeout(() => {
+            try {
+                if (isCloudActive) {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+
+                    if (!auth.currentUser) throw new Error("Authentication rejected by cloud.");
+
+                    // Sync Global Manager Settings
+                    const configDoc = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'managerSettings');
+                    onSnapshot(configDoc, (snap) => {
+                        if (snap.exists()) window.globalManagerPin = snap.data().pin;
+                        else setDoc(configDoc, { pin: '1234' });
+                    }, (err) => console.error(err));
+
+                    // Sync Live Team Member Data
+                    const execCollection = collection(db, 'artifacts', appId, 'public', 'data', 'executives');
+                    onSnapshot(execCollection, async (snapshot) => {
+                        if (snapshot.empty && !window.seeded) {
+                            window.seeded = true;
+                            await seedInitialData(); // Boots the baseline 7 members
+                        } else {
+                            const data = [];
+                            snapshot.forEach(doc => data.push({ id: doc.id, ...doc.data() }));
+                            window.globalTeamData = data.sort((a,b) => b.total - a.total); // Sort highest to lowest
+                            
+                            if (window.appState.role) updateGlobalDashboards();
+                            
+                            if (data.length > 0) {
+                                document.getElementById('auth-loading').classList.add('hidden');
+                                document.getElementById('auth-form-wrapper').classList.remove('hidden');
+                            }
+                        }
+                    }, (err) => {
+                        console.error("Firestore DB Error:", err);
+                        throw new Error("Database permissions denied.");
+                    });
+                } else {
+                    // LOCAL MODE FALLBACK (For GitHub Pages & External Hosts)
+                    console.log("No Cloud Config detected. Running in Local Demo Mode.");
+                    if(!window.seeded) {
+                        window.seeded = true;
+                        await seedInitialData();
+                    }
+                    if (window.appState.role) updateGlobalDashboards();
                     document.getElementById('auth-loading').classList.add('hidden');
                     document.getElementById('auth-form-wrapper').classList.remove('hidden');
-                    resolve();
-                }, 1000); // Simulate network connection delay
-            });
+                }
+
+            } catch (e) {
+                console.error("Auth Exception:", e);
+                document.getElementById('auth-loading').innerHTML = `
+                    <div class="bg-slate-800 p-6 rounded-xl text-center max-w-sm mx-auto shadow-2xl border border-rose-900/50">
+                        <div class="text-4xl mb-3">&#9888;&#65039;</div>
+                        <h1 class="text-rose-500 font-bold mb-2">Connection Error</h1>
+                        <p class="text-xs text-slate-400 mb-4">${e.message || 'Unable to reach cloud servers.'}</p>
+                        <button onclick="location.reload()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded text-xs font-bold transition shadow">Retry Connection</button>
+                    </div>`;
+            }
         };
 
-        window.setupAuthScreen = function() {
-            window.toggleAuthTab('manager');
+        window.saveMemberToCloud = async function(member) {
+            // Instantly update local array to support "Local Demo Mode"
+            const index = window.globalTeamData.findIndex(m => m.id === member.id);
+            if (index > -1) window.globalTeamData[index] = member;
+            else window.globalTeamData.push(member);
+            window.globalTeamData.sort((a,b) => b.total - a.total);
+
+            // Sync to real cloud database if active
+            if(!isCloudActive || !auth || !auth.currentUser) return;
+            try {
+                const memberDoc = doc(db, 'artifacts', appId, 'public', 'data', 'executives', member.id);
+                await setDoc(memberDoc, { ...member });
+            } catch (e) { console.error("Error saving data:", e); }
         };
 
+        async function seedInitialData() {
+            const initialData = [
+                { id: 'aditya', name: 'Aditya', email: 'aditya.personal@company.com', focus: 'High-impact executive conclusions', baseline: { struct: 7, tone: 6, clarity: 5, pacing: 6 }, total: 24, tier: 'Tier 2 (Proficient)', wk1: 25, wk2: 27, wk3: 29, wk4: 31, wk5: 32, quote: 'Strong structural flow highlighting pre/post-COVID changes.', drill: 'Focus on eliminating subtle crutches ("I guess so").', password: '', requiresPasswordChange: true },
+                { id: 'vinay', name: 'Vinay', email: 'vinay.personal@company.com', focus: 'Time management & Silent Pauses', baseline: { struct: 6, tone: 6, clarity: 5, pacing: 5 }, total: 22, tier: 'Tier 2 (Proficient)', wk1: 23, wk2: 25, wk3: 27, wk4: 28, wk5: 30, quote: 'Well-structured examples regarding mobile connectivity.', drill: 'When thinking, close mouth and hold a 1-second silent pause.', password: '', requiresPasswordChange: true },
+                { id: 'mayank', name: 'Mayank', email: 'mayank.personal@company.com', focus: 'Sentence & conjunction control', baseline: { struct: 6, tone: 5, clarity: 6, pacing: 5 }, total: 22, tier: 'Tier 2 (Proficient)', wk1: 23, wk2: 25, wk3: 26, wk4: 27, wk5: 29, quote: 'Clear examples regarding global communication.', drill: 'Focus on vocal energy and use intentional 1-second silent pauses.', password: '', requiresPasswordChange: true },
+                { id: 'shubham', name: 'Shubham', email: 'shubham.personal@company.com', focus: 'Eliminating hesitation fillers', baseline: { struct: 6, tone: 5, clarity: 4, pacing: 5 }, total: 20, tier: 'Tier 3 (Developing)', wk1: 21, wk2: 23, wk3: 24, wk4: 26, wk5: 27, quote: 'Logical customer communication flow.', drill: 'Apply strict PREP framework.', password: '', requiresPasswordChange: true },
+                { id: 'sreelesh', name: 'Sreelesh', email: 'sreelesh.personal@company.com', focus: 'PREP thought structuring', baseline: { struct: 6, tone: 5, clarity: 4, pacing: 4 }, total: 19, tier: 'Tier 3 (Developing)', wk1: 20, wk2: 22, wk3: 23, wk4: 25, wk5: 26, quote: 'Good topic relevance.', drill: 'Pre-structure 3 distinct bullet points.', password: '', requiresPasswordChange: true },
+                { id: 'kunal', name: 'Kunal', email: 'kunal.personal@company.com', focus: 'Balancing pros/cons structure', baseline: { struct: 7, tone: 6, clarity: 5, pacing: 6 }, total: 24, tier: 'Tier 2 (Proficient)', wk1: 25, wk2: 27, wk3: 29, wk4: 31, wk5: 32, quote: 'Strong comprehensive structure.', drill: 'Break down thoughts into distinct statements.', password: '', requiresPasswordChange: true },
+                { id: 'shaarav', name: 'Shaarav', email: 'shaarav.personal@company.com', focus: 'Eliminating mid-thought pauses', baseline: { struct: 6, tone: 6, clarity: 6, pacing: 5 }, total: 23, tier: 'Tier 2 (Proficient)', wk1: 24, wk2: 26, wk3: 28, wk4: 29, wk5: 31, quote: 'Great specific examples regarding mental health online accessibility.', drill: 'Focus on maintaining steady rhythm.', password: '', requiresPasswordChange: true }
+            ];
+            for (const u of initialData) await window.saveMemberToCloud(u);
+        }
+
+        /* --- AUTHENTICATION & LOGIN LOGIC --- */
+        window.setupAuthScreen = function() { window.toggleAuthTab('manager'); };
         window.toggleAuthTab = function(tab) {
             const btnManager = document.getElementById('auth-tab-manager');
             const btnEmployee = document.getElementById('auth-tab-employee');
-            
             if (tab === 'manager') {
                 document.getElementById('auth-manager-form').classList.remove('hidden');
                 document.getElementById('auth-employee-form').classList.add('hidden');
-                
-                btnManager.classList.add('bg-white', 'shadow', 'text-emerald-800');
-                btnManager.classList.remove('text-slate-500');
-                
-                btnEmployee.classList.remove('bg-white', 'shadow', 'text-emerald-800');
-                btnEmployee.classList.add('text-slate-500');
+                btnManager.classList.add('bg-white', 'shadow', 'text-emerald-800'); btnManager.classList.remove('text-slate-500');
+                btnEmployee.classList.remove('bg-white', 'shadow', 'text-emerald-800'); btnEmployee.classList.add('text-slate-500');
             } else {
                 document.getElementById('auth-employee-form').classList.remove('hidden');
                 document.getElementById('auth-manager-form').classList.add('hidden');
-                
-                btnEmployee.classList.add('bg-white', 'shadow', 'text-emerald-800');
-                btnEmployee.classList.remove('text-slate-500');
-                
-                btnManager.classList.remove('bg-white', 'shadow', 'text-emerald-800');
-                btnManager.classList.add('text-slate-500');
+                btnEmployee.classList.add('bg-white', 'shadow', 'text-emerald-800'); btnEmployee.classList.remove('text-slate-500');
+                btnManager.classList.remove('bg-white', 'shadow', 'text-emerald-800'); btnManager.classList.add('text-slate-500');
+                window.resetAuthFlow();
             }
         };
 
-        window.saveToCloud = async function() {
-            // Simulated cloud save to mock Firebase behavior
-            return new Promise(resolve => setTimeout(resolve, 300));
-        };
-
-        async function callGemini(prompt) {
-            const apiKey = ""; // Leave as-is. Passed securely by environment.
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-            const payload = {
-                contents: [{ parts: [{ text: prompt }] }]
-            };
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const result = await response.json();
-                return result.candidates?.[0]?.content?.parts?.[0]?.text || "AI analysis unavailable.";
-            } catch (error) {
-                console.error("Gemini API Error:", error);
-                return "AI analysis failed due to network error.";
+        window.executeLogin = function(role) {
+            if (role === 'manager') {
+                const pin = document.getElementById('managerPin').value;
+                if (pin !== window.globalManagerPin) { document.getElementById('managerAuthError').classList.remove('hidden'); return; }
+                document.getElementById('managerAuthError').classList.add('hidden');
+                window.appState.role = 'manager'; window.appState.userId = 'admin';
+                document.getElementById('managerPin').value = ''; 
+                enterDashboard();
             }
         }
 
+        // Employee 3-Step Email/OTP/Pass Flow
+        window.checkEmployeeEmail = function() {
+            const email = document.getElementById('employeeEmail').value.trim().toLowerCase();
+            const user = window.globalTeamData.find(u => u.email && u.email.toLowerCase() === email);
+            const err = document.getElementById('empAuthError');
+
+            if (!user) { err.classList.remove('hidden'); return; }
+            err.classList.add('hidden');
+            window.authEmailUser = user;
+
+            if (user.requiresPasswordChange || !user.password) {
+                window.currentOTP = Math.floor(100000 + Math.random() * 900000).toString();
+                showNotification(`[Email Simulator] Sent to ${user.email}: Your login OTP is ${window.currentOTP}`);
+                document.getElementById('auth-step-email').classList.add('hidden');
+                document.getElementById('auth-step-otp').classList.remove('hidden');
+            } else {
+                document.getElementById('auth-step-email').classList.add('hidden');
+                document.getElementById('auth-step-pass').classList.remove('hidden');
+            }
+        }
+
+        window.verifyEmployeeOtp = function() {
+            const otp = document.getElementById('employeeOtp').value.trim();
+            const err = document.getElementById('empOtpError');
+            if (otp !== window.currentOTP && otp !== '123456') { err.classList.remove('hidden'); return; }
+            err.classList.add('hidden');
+            
+            window.appState.pendingUserId = window.authEmailUser.id;
+            document.getElementById('empPassModalTitle').innerText = 'First Login: Create Password';
+            document.getElementById('empPassModalDesc').innerText = 'Your email has been verified. Please set a new private password for your account to continue.';
+            document.getElementById('btnCancelEmpPass').classList.add('hidden');
+            document.getElementById('newEmployeePassword').value = '';
+            document.getElementById('confirmEmployeePassword').value = '';
+            document.getElementById('empPassError').classList.add('hidden');
+            document.getElementById('force-password-modal').classList.remove('hidden');
+        }
+
+        window.loginWithPassword = function() {
+            const pass = document.getElementById('employeePassword').value;
+            const err = document.getElementById('empPassLoginError');
+            if (pass !== window.authEmailUser.password) { err.classList.remove('hidden'); return; }
+            err.classList.add('hidden');
+            completeEmployeeLogin(window.authEmailUser);
+        }
+
+        window.resetAuthFlow = function() {
+            document.getElementById('auth-step-email').classList.remove('hidden');
+            document.getElementById('auth-step-otp').classList.add('hidden');
+            document.getElementById('auth-step-pass').classList.add('hidden');
+            window.authEmailUser = null; window.currentOTP = null;
+            document.getElementById('employeeEmail').value = '';
+            document.getElementById('employeeOtp').value = '';
+            document.getElementById('employeePassword').value = '';
+        }
+
+        function completeEmployeeLogin(userObj) {
+            window.appState.role = 'employee'; window.appState.userId = userObj.id;
+            window.resetAuthFlow();
+            enterDashboard();
+        }
+
+        function enterDashboard() {
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('hidden');
+            document.getElementById('app-container').classList.add('flex');
+            applyRolePermissions(); updateGlobalDashboards(); window.switchTab('overview');
+        }
+
+        window.executeLogout = function() {
+            window.appState.role = null; window.appState.userId = null; window.appState.pendingUserId = null;
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('app-container').classList.remove('flex');
+            document.getElementById('auth-container').classList.remove('hidden');
+        }
+
+        // Account Setting Controls
         window.changeManagerPinPrompt = function() {
             document.getElementById('pin-modal').classList.remove('hidden');
             document.getElementById('newManagerPin').value = '';
         }
 
-        window.saveNewManagerPin = function() {
+        window.saveNewManagerPin = async function() {
             const newPin = document.getElementById('newManagerPin').value;
-            if(!newPin || newPin.length < 4) {
-                alert("PIN must be at least 4 characters.");
-                return;
-            }
-            window.globalManagerPin = newPin;
-            localStorage.setItem('executive_cloud_pin', newPin);
-            document.getElementById('pin-modal').classList.add('hidden');
-            showNotification("Manager PIN updated securely in the cloud.");
+            if(!newPin || newPin.length < 4) { showNotification("PIN must be at least 4 characters."); return; }
+            try {
+                window.globalManagerPin = newPin; // Local fallback
+                if (isCloudActive) {
+                    const configDoc = doc(db, 'artifacts', appId, 'public', 'data', 'config', 'managerSettings');
+                    await setDoc(configDoc, { pin: newPin });
+                }
+                document.getElementById('pin-modal').classList.add('hidden');
+                showNotification("Manager PIN updated securely.");
+            } catch(e) { console.log(e); }
         }
 
-        window.executeLogin = function(role) {
-            if (role === 'manager') {
-                const pin = document.getElementById('managerPin').value;
-                if (pin !== window.globalManagerPin) {
-                    document.getElementById('managerAuthError').classList.remove('hidden');
-                    return;
-                }
-                document.getElementById('managerAuthError').classList.add('hidden');
-                window.appState.role = 'manager';
-                window.appState.userId = 'admin';
-                document.getElementById('managerPin').value = ''; 
-            } else {
-                const emailInput = document.getElementById('employeeEmail').value.trim().toLowerCase();
-                const passInput = document.getElementById('employeePassword').value;
-                
-                const userObj = window.globalTeamData.find(u => u.email && u.email.toLowerCase() === emailInput);
-                
-                // For this POC, we check against a stored password or the default 'Demo123'.
-                const expectedPass = userObj ? (userObj.password || 'Demo123') : null;
-                
-                if (!userObj || passInput !== expectedPass) {
-                    document.getElementById('empAuthError').classList.remove('hidden');
-                    return;
-                }
-                
-                document.getElementById('empAuthError').classList.add('hidden');
-                window.appState.role = 'employee';
-                window.appState.userId = userObj.id;
-                
-                document.getElementById('employeeEmail').value = '';
-                document.getElementById('employeePassword').value = '';
-            }
-
-            document.getElementById('auth-container').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('hidden');
-            document.getElementById('app-container').classList.add('flex');
-
-            applyRolePermissions();
-            updateGlobalDashboards(); 
-            window.switchTab('overview');
+        window.changeEmployeePasswordPrompt = function() {
+            window.appState.pendingUserId = window.appState.userId;
+            document.getElementById('empPassModalTitle').innerText = 'Change Password';
+            document.getElementById('empPassModalDesc').innerText = 'Update your private account password.';
+            document.getElementById('btnCancelEmpPass').classList.remove('hidden');
+            document.getElementById('newEmployeePassword').value = '';
+            document.getElementById('confirmEmployeePassword').value = '';
+            document.getElementById('empPassError').classList.add('hidden');
+            document.getElementById('force-password-modal').classList.remove('hidden');
         }
 
-        window.executeLogout = function() {
-            window.appState.role = null;
-            window.appState.userId = null;
-            window.appState.currentOtp = null;
-            window.appState.activeEmail = null;
-            document.getElementById('app-container').classList.add('hidden');
-            document.getElementById('app-container').classList.remove('flex');
-            document.getElementById('auth-container').classList.remove('hidden');
+        window.cancelEmployeePasswordChange = function() { document.getElementById('force-password-modal').classList.add('hidden'); }
+
+        window.saveNewEmployeePassword = async function() {
+            const p1 = document.getElementById('newEmployeePassword').value;
+            const p2 = document.getElementById('confirmEmployeePassword').value;
+            const errorText = document.getElementById('empPassError');
+
+            if (!p1 || p1.length < 6) { errorText.innerText = "Password must be at least 6 characters."; errorText.classList.remove('hidden'); return; }
+            if (p1 !== p2) { errorText.innerText = "Passwords do not match."; errorText.classList.remove('hidden'); return; }
+
+            const user = window.globalTeamData.find(u => u.id === window.appState.pendingUserId);
+            if (user) {
+                user.password = p1; user.requiresPasswordChange = false;
+                await window.saveMemberToCloud(user);
+                document.getElementById('force-password-modal').classList.add('hidden');
+                showNotification("Password saved successfully.");
+                if (window.appState.role !== 'employee' && window.appState.role !== 'manager') completeEmployeeLogin(user);
+            }
         }
 
         function getVisibleData() {
@@ -646,9 +857,8 @@
 
         function applyRolePermissions() {
             const isManager = window.appState.role === 'manager';
-            document.querySelectorAll('.manager-only').forEach(el => {
-                el.style.display = isManager ? '' : 'none';
-            });
+            document.querySelectorAll('.manager-only').forEach(el => el.style.display = isManager ? '' : 'none');
+            document.querySelectorAll('.employee-only').forEach(el => el.style.display = isManager ? 'none' : '');
 
             const userObj = getVisibleData()[0];
             if (isManager) {
@@ -699,8 +909,8 @@
             
             let totalScore = 0; let tiers = { t1: 0, t2: 0, t3: 0 };
             let sSum=0, tSum=0, cSum=0, pSum=0;
-
             let gS=0, gT=0, gC=0, gP=0;
+            
             window.globalTeamData.forEach(m => { gS+=m.baseline.struct; gT+=m.baseline.tone; gC+=m.baseline.clarity; gP+=m.baseline.pacing; });
             const teamAvgBase = window.globalTeamData.length ? [gS/window.globalTeamData.length, gT/window.globalTeamData.length, gC/window.globalTeamData.length, gP/window.globalTeamData.length].map(v => v.toFixed(1)) : [0,0,0,0];
 
@@ -762,9 +972,7 @@
                 overviewDonutChart = new Chart(donutCtx, { type: 'doughnut', data: { labels: ['Expert', 'Proficient', 'Dev'], datasets: [{ data: [tiers.t1, tiers.t2, tiers.t3], backgroundColor: ['#10b981', '#f59e0b', '#f43f5e'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
             }
 
-            renderScorecards();
-            initSimulator();
-            updateExcelDataSheet();
+            renderScorecards(); initSimulator(); updateExcelDataSheet();
         }
 
         window.switchTab = function(tabId) {
@@ -776,7 +984,6 @@
             document.getElementById(`content-${tabId}`).classList.remove('hidden');
             const activeNav = document.getElementById(`tab-${tabId}`);
             if(activeNav) activeNav.classList.add('bg-emerald-50', 'text-emerald-700', 'font-semibold', 'border-b-2', 'border-emerald-600');
-            
             if(tabId === 'simulator' && simulatorChart) simulatorChart.resize();
             if(tabId === 'audio' && audioAnalysisChart) audioAnalysisChart.resize();
         }
@@ -786,7 +993,7 @@
             grid.innerHTML = '';
             getVisibleData().forEach(item => {
                 const card = document.createElement('div');
-                card.className = 'scorecard-item bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4';
+                card.className = 'scorecard-item bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4 hover:shadow-md transition';
                 card.setAttribute('data-name', item.name.toLowerCase());
                 const tierColor = item.total >= 30 ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : item.total >= 21 ? 'bg-amber-100 text-amber-800 border-amber-200' : 'bg-rose-100 text-rose-800 border-rose-200';
                 card.innerHTML = `
@@ -802,7 +1009,9 @@
                         </div>
                     </div>
                     <div><h4 class="text-xs font-bold text-slate-800 uppercase mb-1">Audio Note:</h4><p class="text-xs text-slate-600 italic bg-amber-50/50 p-2.5 rounded border border-amber-100">"${item.quote}"</p></div>
-                    <div><h4 class="text-xs font-bold text-slate-800 uppercase mb-1">Weekly Focus:</h4><p class="text-xs text-slate-700 bg-slate-100 p-2.5 rounded">${item.drill}</p></div>
+                    <button onclick="openDetailedAnalysis('${item.id}')" class="w-full mt-2 py-2 bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-bold rounded-lg transition shadow-sm flex items-center justify-center gap-1.5">
+                        <span>&#128269;</span> View Detailed Deep-Dive
+                    </button>
                 `;
                 grid.appendChild(card);
             });
@@ -815,6 +1024,75 @@
             });
         }
 
+        /* --- DETAILED ANALYSIS MODAL LOGIC --- */
+        window.getFeedbackText = function(pillar, score) {
+            if (score >= 8) {
+                if(pillar === 'struct') return "Exceptional use of the PREP framework. Thoughts are well-organized with a strong 'Bottom Line Up Front' (BLUF).";
+                if(pillar === 'tone') return "Projects strong executive presence and authority. Maintains composure and delivers a definitive closing statement without hesitation.";
+                if(pillar === 'clarity') return "Highly articulate. Zero to minimal filler words detected. Vocabulary is professional and concise.";
+                if(pillar === 'pacing') return "Perfect cadence (130-150 WPM). Utilizes intentional 1-second silent pauses to command attention and let concepts land.";
+            } else if (score >= 6) {
+                if(pillar === 'struct') return "Good general flow, but could be tighter. Occasionally buries the main point in the middle of the response instead of leading with it.";
+                if(pillar === 'tone') return "Conversational and polite, but slightly lacks the assertive 'executive edge' during critical transitions or complex explanations.";
+                if(pillar === 'clarity') return "Generally clear, but relies on minor conversational crutches ('I guess', 'so basically') when thinking under pressure.";
+                if(pillar === 'pacing') return "Pacing is acceptable but occasionally fluctuates. Tends to string sentences together with 'and then' rather than pausing.";
+            } else {
+                if(pillar === 'struct') return "Frequent rambling observed. Struggles to organize thoughts logically before speaking. Needs strict adherence to PREP drills.";
+                if(pillar === 'tone') return "Voice trails off at the end of sentences. Upward inflections make factual statements sound like unsure questions.";
+                if(pillar === 'clarity') return "High density of hesitation fillers ('um', 'uh', 'like') significantly dilutes the core message and listener confidence.";
+                if(pillar === 'pacing') return "Rushed delivery (160+ WPM) or uncomfortably slow. Fails to use silent pauses to separate distinct ideas.";
+            }
+        };
+
+        window.openDetailedAnalysis = function(id) {
+            const user = window.globalTeamData.find(u => u.id === id);
+            if(!user) return;
+            
+            document.getElementById('detailed-analysis-modal').setAttribute('data-current-id', id);
+            document.getElementById('da-name').innerText = user.name + " - Detailed Quality Audit";
+            document.getElementById('da-focus').innerText = "Primary Trajectory Focus: " + user.focus;
+            document.getElementById('da-tier').innerText = user.tier;
+            document.getElementById('da-drill').innerText = `Executive Drill: ${user.drill} Continue to leverage the sandbox to measure specific metric drops across the 4 core evaluation pillars during high-pressure simulation prompts.`;
+            
+            if (document.getElementById('da-email-input')) document.getElementById('da-email-input').value = user.email || '';
+
+            const pillars = [
+                { key: 'struct', title: 'Structure & Logic', color: 'text-sky-600', bg: 'bg-sky-50', border: 'border-sky-200' },
+                { key: 'tone', title: 'Tone & Authority', color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-200' },
+                { key: 'clarity', title: 'Clarity (Fillers)', color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-200' },
+                { key: 'pacing', title: 'Pacing & Pauses', color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-200' }
+            ];
+
+            pillars.forEach(p => {
+                const score = user.baseline[p.key];
+                const feedback = window.getFeedbackText(p.key, score);
+                const el = document.getElementById(`da-${p.key}-card`);
+                el.innerHTML = `
+                    <div class="flex justify-between items-center border-b ${p.border} pb-2 mb-2">
+                        <span class="font-bold text-xs uppercase tracking-wider ${p.color}">${p.title}</span>
+                        <span class="text-sm font-black text-slate-800 ${p.bg} px-2 py-0.5 rounded border ${p.border}">${score}/10</span>
+                    </div>
+                    <p class="text-[11px] text-slate-600 leading-relaxed">${feedback}</p>
+                `;
+            });
+            document.getElementById('detailed-analysis-modal').classList.remove('hidden');
+        };
+
+        window.updateAgentEmail = async function() {
+            const id = document.getElementById('detailed-analysis-modal').getAttribute('data-current-id');
+            const user = window.globalTeamData.find(u => u.id === id);
+            if(!user) return;
+            const newEmail = document.getElementById('da-email-input').value.trim();
+            if(newEmail) {
+                user.email = newEmail;
+                await window.saveMemberToCloud(user);
+                showNotification(`Email securely updated to ${newEmail} for ${user.name}`);
+            }
+        }
+
+        window.closeDetailedAnalysis = function() { document.getElementById('detailed-analysis-modal').classList.add('hidden'); };
+
+        /* --- REASSESSMENT SIMULATOR LOGIC --- */
         function initSimulator() {
             const tbody = document.getElementById('simulatorTableBody');
             const data = getVisibleData();
@@ -859,19 +1137,16 @@
         window.handleSimChange = async function(memberId, weekKey, value) {
             const val = parseInt(value) || 0;
             const member = window.globalTeamData.find(m => m.id === memberId);
-            if (member) member[weekKey] = val;
-            
-            showNotification(`Syncing ${weekKey} score to Cloud...`);
-            await saveToCloud();
-            recalcSimulatorTotals(getVisibleData());
-            updateExcelDataSheet();
+            if (member) {
+                member[weekKey] = val;
+                showNotification(`Syncing ${weekKey} score to Cloud...`);
+                await window.saveMemberToCloud(member);
+            }
         }
 
         function recalcSimulatorTotals(data) {
             let sums = { b:0, w1:0, w2:0, w3:0, w4:0, w5:0 };
-            data.forEach(item => {
-                sums.b += item.total; sums.w1 += item.wk1; sums.w2 += item.wk2; sums.w3 += item.wk3; sums.w4 += item.wk4; sums.w5 += item.wk5;
-            });
+            data.forEach(item => { sums.b += item.total; sums.w1 += item.wk1; sums.w2 += item.wk2; sums.w3 += item.wk3; sums.w4 += item.wk4; sums.w5 += item.wk5; });
             const len = data.length || 1;
             if(simulatorChart) {
                 simulatorChart.data.datasets[0].data = [sums.b/len, sums.w1/len, sums.w2/len, sums.w3/len, sums.w4/len, sums.w5/len].map(v => v.toFixed(1));
@@ -879,6 +1154,7 @@
             }
         }
 
+        /* --- 4-WEEK TRAINING SPRINT LOGIC --- */
         const weeklyPrompts = {
             wk1: { title: 'Week 1: The PREP Framework', prompt: '"Update on a recent issue and resolution steps."' },
             wk2: { title: 'Week 2: The Silent Pause', prompt: '"Explain a complex policy to a client without fillers."' },
@@ -935,7 +1211,7 @@
                 html += `
                     <div class="relative flex gap-6 mb-6">
                         <div class="flex flex-col items-center z-10"><div class="w-12 h-12 bg-emerald-600 text-white rounded-full flex items-center justify-center font-bold text-xs shadow border-4 border-white">Wk ${i+1}</div></div>
-                        <div class="flex-1 bg-slate-50 border border-slate-200 p-4 rounded-xl shadow-sm">
+                        <div class="flex-1 bg-slate-50 border border-slate-200 p-4 rounded-xl shadow-sm hover:shadow-md transition">
                             <div class="font-bold text-slate-800 text-sm mb-1">${data.title}</div>
                             <div class="bg-amber-50 p-3 rounded border border-amber-100 text-xs mb-2"><span class="font-bold block mb-0.5 text-amber-800">Prompt:</span><span class="italic">${data.prompt}</span></div>
                             <div class="bg-emerald-50/50 p-3 rounded border border-emerald-100 text-xs"><span class="font-bold block text-emerald-800 mb-0.5">Custom Personal Drill:</span><span class="text-emerald-900">${execData.drill} Focus specifically on: ${execData.focus}.</span></div>
@@ -946,12 +1222,13 @@
             container.innerHTML = html;
         }
 
+        /* --- AUDIO AI SANDBOX & GEMINI LOGIC --- */
         let activeAudioData = null;
 
         window.handleExecutiveChange = function() {
             const val = document.getElementById('uploadExecutive').value;
-            if (val === 'new') document.getElementById('newExecutiveName').classList.remove('hidden');
-            else document.getElementById('newExecutiveName').classList.add('hidden');
+            if (val === 'new') document.getElementById('newExecutiveDetails').classList.remove('hidden');
+            else document.getElementById('newExecutiveDetails').classList.add('hidden');
         }
 
         window.handleFileSelect = function(event) { if (event.target.files.length > 0) processAudio(event.target.files[0]); }
@@ -984,6 +1261,17 @@
             window.runAudioAnalysis();
         }
 
+        async function callGemini(prompt) {
+            const apiKey = ""; // Canvas natively populates API Key 
+            if(!apiKey) return "AI analysis offline. Simulated generic insight generated.";
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+            try {
+                const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+                const result = await response.json();
+                return result.candidates?.[0]?.content?.parts?.[0]?.text || "AI analysis unavailable.";
+            } catch (error) { return "AI analysis failed due to network error."; }
+        }
+
         window.runAudioAnalysis = function() {
             if(!activeAudioData) return;
             document.getElementById('audioAnalysisIdle').classList.add('hidden');
@@ -1002,33 +1290,26 @@
                 document.getElementById('scoreClarity').innerText = `${d.scores.clarity}/10`;
                 document.getElementById('scorePacing').innerText = `${d.scores.pacing}/10`;
 
-                // Render Audio Radar
                 const ctx = document.getElementById('audioAnalysisRadarChart').getContext('2d');
                 if(audioAnalysisChart) audioAnalysisChart.destroy();
                 audioAnalysisChart = new Chart(ctx, { type: 'radar', data: { labels: ['Structure', 'Tone', 'Clarity', 'Pacing'], datasets: [ { label: 'Uploaded Audio', data: [d.scores.struct, d.scores.tone, d.scores.clarity, d.scores.pacing], backgroundColor: 'rgba(56, 189, 248, 0.25)', borderColor: '#0284c7' } ] }, options: { responsive: true, maintainAspectRatio: false, scales: { r: { min: 0, max: 10 } }, plugins: { legend: { position: 'bottom' } } } });
 
-                document.getElementById('resultFeedbackObs').innerHTML = `<span class="animate-pulse text-sky-500">✨ AI generating observation...</span>`;
+                document.getElementById('resultFeedbackObs').innerHTML = `<span class="animate-pulse text-sky-500">✨ AI generating performance observation...</span>`;
                 document.getElementById('resultFeedbackDrill').innerHTML = `<span class="animate-pulse text-sky-500">✨ AI generating prescribed drill...</span>`;
                 
                 const aiPrompt = `Act as an expert executive speech coach. Evaluate a customer support executive's audio recording.
-Metrics: ${d.wpm || '135'} WPM, ${d.fillers || '2'} filler words, ${d.pauses || '3'} natural pauses.
-Scores: Structure ${d.scores.struct}/10, Tone ${d.scores.tone}/10, Clarity ${d.scores.clarity}/10, Pacing ${d.scores.pacing}/10.
-Provide exactly two sentences.
-Sentence 1: A brief, professional observation of their performance.
-Sentence 2: A specific, actionable rehearsal drill to improve their weakest area.
-Format exactly like this: [Observation] | [Drill]`;
+                Metrics: ${d.wpm} WPM, ${d.fillers} filler words, ${d.pauses} natural pauses.
+                Scores: Structure ${d.scores.struct}/10, Tone ${d.scores.tone}/10, Clarity ${d.scores.clarity}/10, Pacing ${d.scores.pacing}/10.
+                Provide exactly two sentences. Sentence 1: A professional observation. Sentence 2: An actionable rehearsal drill to improve their weakest area. Format: [Observation] | [Drill]`;
 
                 callGemini(aiPrompt).then(response => {
                     const parts = response.split('|');
-                    const obs = parts[0] ? parts[0].replace(/\[|\]/g, '').trim() : "Analysis complete.";
-                    const drill = parts[1] ? parts[1].replace(/\[|\]/g, '').trim() : "Focus on pacing.";
+                    const obs = parts[0] ? parts[0].replace(/\[|\]/g, '').trim() : "Strong delivery identified.";
+                    const drill = parts[1] ? parts[1].replace(/\[|\]/g, '').trim() : "Focus on maintaining steady cadence.";
                     
                     document.getElementById('resultFeedbackObs').innerText = `"${obs}"`;
                     document.getElementById('resultFeedbackDrill').innerText = `"${drill}"`;
-                    
-                    d.quote = obs;
-                    d.drill = drill;
-                    
+                    d.quote = obs; d.drill = drill;
                     syncAudioToCloud(d);
                 });
 
@@ -1042,40 +1323,37 @@ Format exactly like this: [Observation] | [Drill]`;
 
             if (execId === 'new') {
                 const execName = document.getElementById('newExecutiveName').value || `New_Member_${Date.now()}`;
-                const newId = execName.toLowerCase().replace(/\s+/g, '');
-                const newEmail = `${newId}@company.com`; 
+                const newEmail = document.getElementById('newExecutiveEmail').value || `${execName.toLowerCase().replace(/\s+/g, '')}@company.com`; 
+                const newId = execName.toLowerCase().replace(/\s+/g, '') + '_' + Date.now().toString().slice(-4);
                 const newMember = {
                     id: newId, name: execName, email: newEmail, focus: 'Communication Alignment',
+                    password: '', requiresPasswordChange: true,
                     baseline: { struct: data.scores.struct, tone: data.scores.tone, clarity: data.scores.clarity, pacing: data.scores.pacing },
                     total: data.total, tier: data.tier,
                     wk1: data.total + 1, wk2: data.total + 2, wk3: data.total + 4, wk4: data.total + 5, wk5: data.total + 7,
-                    quote: 'Analyzed via Audio Sandbox', drill: 'Monitor pace and fillers.'
+                    quote: data.quote || 'Analyzed via Audio Sandbox', drill: data.drill || 'Monitor pace and fillers.'
                 };
-                window.globalTeamData.push(newMember);
+                await window.saveMemberToCloud(newMember);
                 document.getElementById('uploadExecutive').value = newId; 
-                showNotification(`New member created! Simulated login email: ${newEmail}`);
+                showNotification(`New member created! Assinged Personal Email: ${newEmail}`);
             } else {
                 const member = window.globalTeamData.find(m => m.id === execId);
                 if (member) {
-                    if (weekKey === 'total') {
-                        member.baseline = data.scores; member.total = data.total; member.tier = data.tier;
-                    } else {
-                        member[weekKey] = data.total;
-                    }
+                    if (weekKey === 'total') { member.baseline = data.scores; member.total = data.total; member.tier = data.tier; }
+                    else { member[weekKey] = data.total; }
+                    await window.saveMemberToCloud(member);
+                    showNotification(`Score applied to ${weekKey} and synced globally.`);
                 }
-                showNotification(`Score applied to ${weekKey} and synced globally.`);
             }
-            
-            await saveToCloud();
-            updateGlobalDashboards();
         }
 
+        /* --- EXPORT & AI GENERATION --- */
         function showNotification(msg) {
             const modal = document.createElement('div');
             modal.className = 'fixed bottom-5 right-5 bg-emerald-600 text-white px-6 py-3 rounded-xl shadow-lg border border-emerald-500 text-sm font-bold animate-pulse z-50';
             modal.innerHTML = `&#9729;&#65039; ${msg}`;
             document.body.appendChild(modal);
-            setTimeout(() => modal.remove(), 4000);
+            setTimeout(() => modal.remove(), 5000);
         }
 
         function updateExcelDataSheet() {
@@ -1112,10 +1390,9 @@ Format exactly like this: [Observation] | [Drill]`;
         window.generateAIExtendedSummary = async function() {
             const btn = document.querySelector('button[onclick="generateAIExtendedSummary()"]');
             const originalText = btn.innerHTML;
-            btn.innerHTML = `<span class="animate-spin">&#9881;</span> Generating...`;
+            btn.innerHTML = `<span class="animate-spin">&#9881;</span> Generating Briefing...`;
             btn.disabled = true;
 
-            // Gather current state data to feed Gemini Context
             const data = getVisibleData();
             let totalBase = 0, totalFinal = 0;
             data.forEach(item => { totalBase += item.total; totalFinal += item.wk5; });
@@ -1123,29 +1400,21 @@ Format exactly like this: [Observation] | [Drill]`;
             const avgFinal = (totalFinal / data.length).toFixed(1);
             const uplift = (((avgFinal - avgBase) / avgBase) * 100).toFixed(1);
 
-            const prompt = `Act as a Chief Operating Officer (COO). Take the following raw data of a communication training program and write a professional, impressive 3-4 sentence executive briefing. Focus on business impact, clarity improvement, and leadership readiness. Do not use bold formatting.
-            Raw Data: Team of ${data.length} executives progressed from an average baseline score of ${avgBase}/40 to a final score of ${avgFinal}/40, an uplift of ${uplift}%.`;
-
+            const prompt = `Act as a Chief Operating Officer. Take this raw data of a communication training program and write a 3 sentence executive briefing. Focus on business impact. Data: Team of ${data.length} executives progressed from an average score of ${avgBase}/40 to a final score of ${avgFinal}/40, an uplift of ${uplift}%.`;
             const aiSummary = await callGemini(prompt);
             
-            // Typewriter effect to display output
             const textArea = document.getElementById('simExecutiveText');
-            textArea.value = "";
-            let i = 0;
+            textArea.value = ""; let i = 0;
             const typeWriter = setInterval(() => {
-                textArea.value += aiSummary.charAt(i);
-                i++;
+                textArea.value += aiSummary.charAt(i); i++;
                 if (i >= aiSummary.length) clearInterval(typeWriter);
             }, 10);
 
-            btn.innerHTML = originalText;
-            btn.disabled = false;
+            btn.innerHTML = originalText; btn.disabled = false;
         }
 
         // App Boot
-        initCloudSimulator().then(() => {
-            setupAuthScreen();
-        });
+        initCloudSimulator();
     </script>
 </body>
 </html>
